@@ -12,17 +12,38 @@ public class SenetBoom extends ApplicationAdapter {
 
 	// from scene2dUi
 	Stage currentStage;
+	boolean showOptions;
 	Stage OptionsStage;
+	boolean showCredits;
+	Stage CreditsStage;
 
 	Texture blackpiece;
 	Texture whitepiece;
 	Texture blackpieceSelected;
 	Texture whitepieceSelected;
+
+	Turn gameState;
+
+	boolean gameStarted;
 	
 	@Override
 	public void create () {
 		batch = new SpriteBatch();
 		background = new Texture("badlogic.jpg");
+
+		// from scene2dUi
+		currentStage = new Stage();
+		showOptions = false;
+		OptionsStage = new Stage();
+		showCredits = false;
+		CreditsStage = new Stage();
+
+		blackpiece = new Texture("blackpiece.png");
+		whitepiece = new Texture("whitepiece.png");
+		blackpieceSelected = new Texture("blackpieceSelected.png");
+		whitepieceSelected = new Texture("whitepieceSelected.png");
+
+		gameState = Turn.PLAYERWHITE;
 	}
 
 	@Override
@@ -31,8 +52,48 @@ public class SenetBoom extends ApplicationAdapter {
 		batch.begin();
 		batch.draw(background, 0, 0);
 		batch.end();
+
+		// from scene2dUi
+		currentStage.act();
+		currentStage.draw();
+
+		if (showOptions) {
+			OptionsStage.act();
+			OptionsStage.draw();
+		}
+
+		if (showCredits) {
+			CreditsStage.act();
+			CreditsStage.draw();
+		}
+
+		if(gameStarted){
+			// play an animation that decides randomly if white or black begins
+			// if white begins, gameState = Turn.PLAYERWHITE
+			// if black begins, gameState = Turn.PLAYERBLACK
+
+			// TODO
+
+			// draw the board
+			createGame();
+
+			gameStarted = false;
+		}
+
+		processTurn();
 	}
-	
+
+	// enum of turn
+	private enum Turn {
+		PLAYERWHITE,
+		PLAYERBLACK,
+	}
+
+	public void processTurn() {
+		// process the turn
+
+		//
+	}
 	@Override
 	public void dispose () {
 		batch.dispose();
