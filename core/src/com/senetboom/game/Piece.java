@@ -1,4 +1,6 @@
-package com.sonetboom.game;
+package com.senetboom.game;
+
+import java.util.ArrayList;
 
 public class Piece {
     public enum Color {
@@ -17,6 +19,13 @@ public class Piece {
     public Piece(Color color) {
         this.color = color;
         this.state = State.NORMAL;
+    }
+
+    public ArrayList<Tile> calculateMove(int x, int y, int newX, int newY) {
+        // calculate if the move is valid
+        // if it is, return true
+        // if it isn't, return false
+        return null;
     }
 
     public Color getColor() {
