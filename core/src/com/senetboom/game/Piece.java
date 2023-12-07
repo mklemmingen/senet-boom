@@ -5,7 +5,7 @@ import java.util.ArrayList;
 public class Piece {
     public enum Color {
         BLACK,
-        WHITE
+        WHITE,
     }
 
     public enum State {
@@ -13,11 +13,11 @@ public class Piece {
         SELECTED
     }
 
-    private Color color;
+    private Color colour;
     private State state;
 
     public Piece(Color color) {
-        this.color = color;
+        this.colour = color;
         this.state = State.NORMAL;
     }
 
@@ -28,8 +28,8 @@ public class Piece {
         return null;
     }
 
-    public Color getColor() {
-        return this.color;
+    public Color getColour() {
+        return this.colour;
     }
 
     public State getState() {

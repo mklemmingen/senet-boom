@@ -1,52 +1,115 @@
 package com.senetboom.game;
 
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.Stack;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.senetboom.game.Piece;
+
+import static com.senetboom.game.SenetBoom.*;
 
 public class Board {
     /*
     2D Array of Pieces of the senet Board
      */
-    private Tile[][] board;
+    private static Tile[] board = new Tile[30];
 
     public Board() {
-        this.board = new Tile[3][10];
         // populate the board with pieces, depending on the senet rules
-        // 5 black pieces
-        for (int i = 0; i < 5; i++) {
-            this.board[0][i] = new Tile();
-            board[0][i].setPiece(new Piece(Piece.Color.BLACK));
+        for(int i=0; i<30; i++) {
+            board[i] = new Tile(i);
         }
-        // 5 white pieces
-        for (int i = 0; i < 5; i++) {
-            this.board[2][i] = new Tile();
-            board[0][i].setPiece(new Piece(Piece.Color.WHITE));
+        // the first 10 pieces are black, white, black, white, black, white ...
+        for(int i=0; i<10; i++) {
+            if(i%2 == 0) {
+                board[i].setPiece(new Piece(Piece.Color.BLACK));
+            } else {
+                board[i].setPiece(new Piece(Piece.Color.WHITE));
+            }
         }
-        // set the tiles with the special abilities
-        // 3 houses
-        for (int i = 0; i < 3; i++) {
-            this.board[1][i] = new Tile();
-            board[1][i].setSpecialState(Tile.SpecialState.HOUSE);
+        // the special states are:
+        for (int i = 0; i < board.length; i++) {
+            if (i == 25) { // The Waters of Chaos
+                board[i].setSpecialState(Tile.SpecialState.WATER);
+            } else if (i >= 26 && i <= 28) { // Safe tiles
+                board[i].setSpecialState(Tile.SpecialState.SAFE);
+            } else if (i == 29) { // The House of Happiness (final tile)
+                board[i].setSpecialState(Tile.SpecialState.HOUSE);
+            } else {
+                board[i].setSpecialState(Tile.SpecialState.NONE);
+            }
         }
-        // 2 water tiles
-        for (int i = 0; i < 2; i++) {
-            this.board[1][i + 3] = new Tile();
-            board[1][i + 3].setSpecialState(Tile.SpecialState.WATER);
+    }
+
+    public static Stage drawBoard() {
+        // create a root table
+        Table root = new Table();
+        // iterate through the board, at each tile
+        Tile[] board = getBoard();
+        for(Tile tile: board) {
+            Stack stack = new Stack();
+
+            // add an empty png to the stack, so that it is represented even if no piece or special state is present
+            Image empty = new Image(emptyTexture);
+            empty.setSize(tileSize, tileSize);
+            empty.setZIndex(0);
+            stack.addActor(empty);
+
+            // if the tile has a special state, draw the special state
+            if(tile.hasSpecialState()) {
+                Image specialState;
+                if(tile.getSpecialState() == Tile.SpecialState.HOUSE) {
+                    // draw a house to the stack
+                    specialState = new Image(house);
+                } else if(tile.getSpecialState() == Tile.SpecialState.WATER) {
+                    // draw water to the stack
+                    specialState = new Image(water);
+                } else {
+                    // draw a safe tile to the stack
+                    specialState = new Image(safe);
+                }
+                specialState.setSize(tileSize, tileSize);
+                specialState.setZIndex(1);
+                stack.addActor(specialState);
+            }
+
+            boolean addDrag = false;
+            // if the tile has a piece, draw the piece
+            if(tile.hasPiece()) {
+                // go through the arraylist of positions where no piece should be drawn (empty variables),
+                // if the current tile is in the arraylist, don't draw a piece
+                // if the current tile is not in the arraylist, draw a piece
+                for(int emptyTiles: SenetBoom.emptyVariables) {
+                    if(emptyTiles == tile.getPosition()) {
+                        Image piece;
+                        if(tile.getPiece().getColour() == Piece.Color.BLACK) {
+                            // draw a black piece to the stack
+                            piece = new Image(blackpiece);
+                        } else {
+                            // draw a white piece to the stack
+                            piece = new Image(whitepiece);
+                        }
+                        piece.setSize(tileSize, tileSize);
+                        piece.setZIndex(2);
+                        stack.addActor(piece);
+                        addDrag = true;
+                        break;
+                    }
+                }
+            }
+
+            if(addDrag){
+                // drag and drop listeners
+                // TODO
+            }
+
+            root.add(stack);
+            if(tile.getPosition() == 9 || tile.getPosition() == 19) {
+                root.row();
+            }
         }
-        // 2 safe tiles
-        for (int i = 0; i < 2; i++) {
-            this.board[1][i + 5] = new Tile();
-            board[1][i + 5].setSpecialState(Tile.SpecialState.SAFE);
-        }
-        // 2 water tiles
-        for (int i = 0; i < 2; i++) {
-            this.board[1][i + 7] = new Tile();
-            board[1][i + 7].setSpecialState(Tile.SpecialState.WATER);
-        }
-        // 3 houses
-        for (int i = 0; i < 3; i++) {
-            this.board[1][i + 9] = new Tile();
-            board[1][i + 9].setSpecialState(Tile.SpecialState.HOUSE);
-        }
+
+        return null;
     }
 
     public void movePiece(int x, int y, int newX, int newY) {
@@ -57,7 +120,12 @@ public class Board {
             //  if it is, do the special situation
         // if it isn't, don't move the piece
     }
-    public Tile[][] getBoard() {
-        return this.board;
+
+    public static void setBoard(Tile[] saveBoard) {
+        board = saveBoard;
+    }
+
+    public static Tile[] getBoard() {
+        return board;
     }
 }
