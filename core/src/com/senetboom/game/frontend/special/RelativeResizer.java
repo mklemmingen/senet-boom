@@ -1,6 +1,7 @@
-package com.senetboom.game;
+package com.senetboom.game.frontend.special;
 
 import com.badlogic.gdx.Gdx;
+import com.senetboom.game.SenetBoom;
 
 public class RelativeResizer {
     /*

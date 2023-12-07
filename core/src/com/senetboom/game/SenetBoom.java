@@ -9,9 +9,13 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.senetboom.game.backend.*;
+import com.senetboom.game.frontend.stages.GameStage;
+import com.senetboom.game.frontend.stages.MainMenu;
+import com.senetboom.game.frontend.special.RelativeResizer;
+import com.senetboom.game.frontend.text.Typewriter;
 
 public class SenetBoom extends ApplicationAdapter {
 
@@ -39,7 +43,7 @@ public class SenetBoom extends ApplicationAdapter {
 	static Stage currentStage;
 
 	// stage options
-	boolean showOptions;
+	public static boolean showOptions;
 	Stage OptionsStage;
 
 	// stage credit
@@ -47,10 +51,10 @@ public class SenetBoom extends ApplicationAdapter {
 	Stage CreditsStage;
 
 	// stick stage
-	static Stage stickStage;
+	public static Stage stickStage;
 
 	// typeWriterStage
-	static Stage typeWriterStage;
+	public static Stage typeWriterStage;
 
 	// hitStage
 	Stage hitStage;
@@ -65,8 +69,8 @@ public class SenetBoom extends ApplicationAdapter {
 	Stage handStage;
 	Texture hand;
 	// for the pieces textures unselected
-	static Texture blackpiece;
-	static Texture whitepiece;
+	public static Texture blackpiece;
+	public static Texture whitepiece;
 
 	// for the selected pieces textures
 	Texture blackpieceSelected;
@@ -76,7 +80,7 @@ public class SenetBoom extends ApplicationAdapter {
 	static Turn gameState;
 
 	// for the game boolean value of it having just started
-	static boolean gameStarted;
+	public static boolean gameStarted;
 
 	// for the tileSize relative to screenSize from RelativeResizer
 	public static float tileSize;
@@ -168,7 +172,7 @@ public class SenetBoom extends ApplicationAdapter {
 		safe = new Texture("textures/safe.png");
 		rebirth = new Texture("textures/rebirth.png");
 		rebirthProtection = new Texture("textures/rebirthprotection.png");
-		logo = new Texture("textures/logo.png");
+		logo = new Texture("logoSenet.png");
 		tileTexture = new Texture("textures/tile.png");
 		emptyTexture = new Texture("textures/empty.png");
 
@@ -182,6 +186,10 @@ public class SenetBoom extends ApplicationAdapter {
 		tileSize = 80;
 
 		gameState = Turn.PLAYERWHITE;
+
+		Gdx.input.setInputProcessor(currentStage);
+
+		createMenu();
 	}
 
 	@Override
@@ -192,6 +200,7 @@ public class SenetBoom extends ApplicationAdapter {
 		batch.draw(background, 0, 0);
 		batch.end();
 
+		/*
 		// relative resizer
 		// check to make sure the screen hasn't resized
 		if(RelativeResizer.ensure()) {
@@ -204,8 +213,7 @@ public class SenetBoom extends ApplicationAdapter {
 			// sets viewport correctly
 			resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		}
-
-		//loading screen
+		*/
 
 		// from scene2dUi
 		currentStage.act();
@@ -224,18 +232,6 @@ public class SenetBoom extends ApplicationAdapter {
 		if (showCredits) {
 			CreditsStage.act();
 			CreditsStage.draw();
-		}
-
-		if(gameStarted){
-			// play an animation that decides randomly if white or black begins
-			// if white begins, gameState = Turn.PLAYERWHITE
-			// if black begins, gameState = Turn.PLAYERBLACK
-
-			// TODO
-
-			// draw the board
-			renderBoard();
-			gameStarted = false;
 		}
 
 		if(inGame){
@@ -325,20 +321,62 @@ public class SenetBoom extends ApplicationAdapter {
 	}
 
 	public static Coordinate calculatePXbyTile(int x, int y) {
-		// calculate the pixel position of a tile
-		int posX = 0;
-		int posY = 0;
+		// the screen is 1536 to 896. The board is 3x10 tiles and each tile is 80x80px.
+		// the board is centered on the screen
+		int screenWidth = 1536;
+		int screenHeight = 896;
+		int tileWidth = 80;
+		int tileHeight = 80;
+		int boardWidth = tileWidth * 10;
+		int boardHeight = tileHeight * 3;
 
-		// TODO
+		// Calculate starting position of the board
+		int boardStartX = (screenWidth - boardWidth) / 2;
+		int boardStartY = (screenHeight - boardHeight) / 2;
+
+		// Calculate tile position
+		int posX, posY;
+
+		if (y == 1) { // Middle row (reversed)
+			posX = boardStartX + (9 - x) * tileWidth;
+		} else { // Top and bottom rows
+			posX = boardStartX + x * tileWidth;
+		}
+
+		posY = boardStartY + y * tileHeight;
 
 		return new Coordinate(posX, posY);
 	}
 
 	public static int calculateTilebyPx(int x, int y) {
-		// calculate the tile position of a pixel
-		int tile = 0;
+		// the screen is 1536 to 896. The board is 3x10 tiles and each tile is 80x80px.
+		// the board is centered on the screen
+		int screenWidth = 1536;
+		int screenHeight = 896;
+		int tileWidth = 80;
+		int tileHeight = 80;
+		int boardWidth = tileWidth * 10;
+		int boardHeight = tileHeight * 3;
 
-		// TODO
+		// Calculate starting position of the board
+		int boardStartX = (screenWidth - boardWidth) / 2;
+		int boardStartY = (screenHeight - boardHeight) / 2;
+
+		// Calculate which tile
+		int tileX = (x - boardStartX) / tileWidth;
+		int tileY = (y - boardStartY) / tileHeight;
+
+		// Ensure tileX and tileY are within the board bounds
+		if (tileX < 0 || tileX >= 10 || tileY < 0 || tileY >= 3) {
+			return -1; // Return -1 or other error value if not within the board
+		}
+
+		int tile;
+		if (tileY == 1) { // Middle row (reversed)
+			tile = tileY * 10 + (9 - tileX);
+		} else { // Top and bottom rows
+			tile = tileY * 10 + tileX;
+		}
 
 		return tile;
 	}
@@ -354,11 +392,15 @@ public class SenetBoom extends ApplicationAdapter {
 	}
 
 	public static void renderBoard() {
-		currentStage = Board.drawBoard();
+		currentStage.clear();
+		currentStage = GameStage.drawBoard();
+		Gdx.input.setInputProcessor(currentStage);
 	}
 
-	private void createMenu() {
+	public static void createMenu() {
 		currentStage = MainMenu.createMenu();
+		Gdx.input.setInputProcessor(currentStage);
+		inGame = false;
 	}
 
 	private void checkForGameEnd() {

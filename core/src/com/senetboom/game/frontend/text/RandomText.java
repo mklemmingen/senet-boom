@@ -1,4 +1,4 @@
-package com.senetboom.game;
+package com.senetboom.game.frontend.text;
 
 import java.util.List;
 

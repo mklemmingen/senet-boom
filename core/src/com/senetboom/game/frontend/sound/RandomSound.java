@@ -1,4 +1,4 @@
-package com.senetboom.game;
+package com.senetboom.game.frontend.sound;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Sound;

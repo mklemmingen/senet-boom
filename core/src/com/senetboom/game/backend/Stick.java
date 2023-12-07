@@ -1,7 +1,8 @@
-package com.senetboom.game;
+package com.senetboom.game.backend;
 
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.senetboom.game.SenetBoom;
 
 public class Stick {
 

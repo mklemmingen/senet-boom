@@ -1,4 +1,4 @@
-package com.senetboom.game;
+package com.senetboom.game.backend;
 
 public interface Move {
 

@@ -1,7 +1,8 @@
-package com.senetboom.game;
+package com.senetboom.game.frontend.sound;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Music;
+import com.senetboom.game.SenetBoom;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,8 +1,13 @@
-package com.senetboom.game;
+package com.senetboom.game.frontend.special;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Stack;
+import com.senetboom.game.SenetBoom;
+import com.senetboom.game.backend.Board;
+import com.senetboom.game.backend.Coordinate;
+import com.senetboom.game.backend.Piece;
+import com.senetboom.game.backend.Tile;
 
 import static com.senetboom.game.SenetBoom.tileSize;
 

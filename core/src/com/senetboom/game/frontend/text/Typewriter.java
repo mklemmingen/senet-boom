@@ -1,10 +1,12 @@
-package com.senetboom.game;
+package com.senetboom.game.frontend.text;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.senetboom.game.SenetBoom;
+import com.senetboom.game.frontend.text.RandomText;
 
 public class Typewriter {
     /*
