@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Random;
 
 public class RandomSound {
-    private List<Sound> sounds;
+    private final List<Sound> sounds;
     private final Random random;
     private float volume;
 
@@ -22,7 +22,7 @@ public class RandomSound {
         sounds.add(sound);
     }
 
-    public void play(float volume) {
+    public void play() {
         if (!sounds.isEmpty()) {
             int index = random.nextInt(sounds.size());
             sounds.get(index).play(volume);

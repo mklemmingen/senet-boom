@@ -1,13 +1,17 @@
 package com.senetboom.game;
 
 import com.badlogic.gdx.ApplicationAdapter;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Group;
-import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.ScreenUtils;
 
 public class SenetBoom extends ApplicationAdapter {
 
@@ -18,7 +22,12 @@ public class SenetBoom extends ApplicationAdapter {
 	public static Texture emptyTexture;
 
 	// for the empty variables (the tiles that are currently moved by a bot)
-	public static int[] emptyVariables;
+	public static int emptyVariable;
+
+	// for the possible moves that the bot uses for decision-making
+	// Array of int values
+	public static Array<Integer> possibleMoves;
+	public static int possibleMove;
 
 	// for the batch
 	SpriteBatch batch;
@@ -38,7 +47,7 @@ public class SenetBoom extends ApplicationAdapter {
 	Stage CreditsStage;
 
 	// stick stage
-	Stage stickStage;
+	static Stage stickStage;
 
 	// typeWriterStage
 	static Stage typeWriterStage;
@@ -64,21 +73,22 @@ public class SenetBoom extends ApplicationAdapter {
 	Texture whitepieceSelected;
 
 	// for the turn constant
-	Turn gameState;
+	static Turn gameState;
 
 	// for the game boolean value of it having just started
-	boolean gameStarted;
+	static boolean gameStarted;
 
 	// for the tileSize relative to screenSize from RelativeResizer
 	public static float tileSize;
 
 	// textures for special state
-	public static Texture house;
+	public static Texture happy;
 	public static Texture water;
 	public static Texture safe;
+	public static Texture rebirth;
 
 	// boolean determining if the game is in progress
-	public boolean inGame;
+	public static boolean inGame;
 
 	// typewriter
 	public static Typewriter typeWriter;
@@ -89,10 +99,41 @@ public class SenetBoom extends ApplicationAdapter {
 	// for setting to true once the sticks are thrown
 	public boolean sticksThrown = false;
 
+	// relative resizer
+	public static RelativeResizer relativeResizer;
+
+	public static Texture logo;
+
+	// for the textbutton skin
+	public static Skin skin;
+
+	// if the Sticks are Tumbling
+	public static boolean sticksTumbling;
+
+	// current Stick value
+	public static int currentStickValue;
+	// Sticks
+	public static Stick gameSticks;
+
+	//Game End Stage
+	public static Stage gameEndStage;
+
+	// legitMove boolean
+	public static boolean legitMove;
+
+	// rebirth protection
+	public static Texture rebirthProtection;
+
+	// for the music volume
+	public static float volume;
+
+	// texture for the tile
+	public static Texture tileTexture;
+
 	@Override
 	public void create () {
 		batch = new SpriteBatch();
-		background = new Texture("egypt.png");
+		background = new Texture("textures/egypt.png");
 
 		// from scene2dUi
 		currentStage = new Stage();
@@ -100,11 +141,45 @@ public class SenetBoom extends ApplicationAdapter {
 		OptionsStage = new Stage();
 		showCredits = false;
 		CreditsStage = new Stage();
+		inGame = false;
+		gameStarted = false;
+		gameEndStage = new Stage();
+		stickStage = new Stage();
+		typeWriterStage = new Stage();
+		hitStage = new Stage();
+		helpOverlayStage = new Stage();
+		handStage = new Stage();
 
-		blackpiece = new Texture("blackpiece.png");
-		whitepiece = new Texture("whitepiece.png");
-		blackpieceSelected = new Texture("blackpieceSelected.png");
-		whitepieceSelected = new Texture("whitepieceSelected.png");
+		displayHelp = false;
+		skipTurn = false;
+		sticksTumbling = false;
+		legitMove = false;
+
+		// loading the skin
+		skin = new Skin(Gdx.files.internal("menu.commodore64/uiskin.json"));
+
+		// loading all textures
+		blackpiece = new Texture("textures/blackpiece.png");
+		whitepiece = new Texture("textures/whitepiece.png");
+		// blackpieceSelected = new Texture("textures/blackpieceSelected.png");
+		// whitepieceSelected = new Texture("textures/whitepieceSelected.png");
+		happy = new Texture("textures/happy.png");
+		water = new Texture("textures/water.png");
+		safe = new Texture("textures/safe.png");
+		rebirth = new Texture("textures/rebirth.png");
+		rebirthProtection = new Texture("textures/rebirthprotection.png");
+		logo = new Texture("textures/logo.png");
+		tileTexture = new Texture("textures/tile.png");
+		emptyTexture = new Texture("textures/empty.png");
+
+		// for the empty tile texture
+		emptyTexture = new Texture("textures/empty.png");
+
+		// for the empty variable (the tile that is currently moved by a bot)
+		emptyVariable = -1;
+
+		// for the tileSize relative to screenSize from RelativeResizer
+		tileSize = 80;
 
 		gameState = Turn.PLAYERWHITE;
 	}
@@ -116,6 +191,19 @@ public class SenetBoom extends ApplicationAdapter {
 		batch.begin();
 		batch.draw(background, 0, 0);
 		batch.end();
+
+		// relative resizer
+		// check to make sure the screen hasn't resized
+		if(RelativeResizer.ensure()) {
+			// if so, adapts tileSize already in RelativeResizer, we need to re-render the currentStage
+			if(inGame){
+				renderBoard();
+			} else { // creates a main menu stage as a failsafe
+				createMenu();
+			}
+			// sets viewport correctly
+			resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		}
 
 		//loading screen
 
@@ -147,7 +235,6 @@ public class SenetBoom extends ApplicationAdapter {
 
 			// draw the board
 			renderBoard();
-
 			gameStarted = false;
 		}
 
@@ -165,6 +252,9 @@ public class SenetBoom extends ApplicationAdapter {
 			handStage.act();
 			handStage.draw();
 
+			gameEndStage.act();
+			gameEndStage.draw();
+
 			processTurn();
 		}
 	}
@@ -179,32 +269,30 @@ public class SenetBoom extends ApplicationAdapter {
 		// --------------- stickThrow part
 		// set waiting for a stickThrow
 		// wait for a stickThrow
-
-		// --------------- calculate Move part
-		if(sticksThrown) {
-
-
+		if(sticksTumbling){
+			Stick.update();
+		}
+		else{
+			// ----------------- help part - add later
 			// after thrown, check if any moves are even possible with the stick(dice) number
-			// if the next player has no moves possible, the turns get ended and switched with skipTurn = true
+			// if the next player has no moves possible, a slight hint gets added to the screen
 			// we run calculateMove on any piece of the player and if it returns null,
 			// the next player has no moves possible
 
 			// ----------------- legit Move part
 
 			// wait for a legitMove from a player of gameState
-
-			// if not legitMove, wait for a legitMove from a player
-
-			// if legitMove, move the piece
-
-			// check if the game is over
-
-			// switch turn after completing the move
-			switchTurn();
-
-			// ----------------- skip turn part
+			if(legitMove) {
+				// if not legitMove, waits for a legitMove switch around
+				// if legitMove, moves the piece in its respective dragStop Listener
+				// check if the game is over
+				checkForGameEnd();
+				// switch turn after completing the move
+				switchTurn();
+			}
 		}
 
+		// ----------------- skip turn part
 		// check, beside if(legitMove) above, if the player has decided to push the skip turn button
 		if (skipTurn) {
 			// add a typewriter of ANGER or CONFUSED or SAD
@@ -216,8 +304,6 @@ public class SenetBoom extends ApplicationAdapter {
 			// other players turn
 			switchTurn();
 		}
-
-
 	}
 
 	private void switchTurn() {
@@ -227,12 +313,9 @@ public class SenetBoom extends ApplicationAdapter {
 		} else {
 			gameState = Turn.PLAYERWHITE;
 		}
-		sticksThrown = false;
-	}
-
-
-	public static void renderBoard() {
-		currentStage = Board.drawBoard();
+		renderBoard();
+		gameSticks = new Stick();
+		currentStickValue = gameSticks.getValue();
 	}
 
 	@Override
@@ -241,27 +324,77 @@ public class SenetBoom extends ApplicationAdapter {
 		background.dispose();
 	}
 
-	public void createGame() {
-		// create the game
-	}
-
-	public void createOptions() {
-		// create the options
-	}
-
-	public void createMainMenu() {
-		// create the main menu
-	}
-
-	public void createCredits() {
-		// create the credits
-	}
-
 	public static Coordinate calculatePXbyTile(int x, int y) {
 		// calculate the pixel position of a tile
 		int posX = 0;
 		int posY = 0;
 
+		// TODO
+
 		return new Coordinate(posX, posY);
+	}
+
+	public static int calculateTilebyPx(int x, int y) {
+		// calculate the tile position of a pixel
+		int tile = 0;
+
+		// TODO
+
+		return tile;
+	}
+
+	public static void createHelpStage() {
+	}
+
+	public static void createOptionsStage() {
+	}
+
+	public static Skin getSkin() {
+		return skin;
+	}
+
+	public static void renderBoard() {
+		currentStage = Board.drawBoard();
+	}
+
+	private void createMenu() {
+		currentStage = MainMenu.createMenu();
+	}
+
+	private void checkForGameEnd() {
+		// goes over the gameBoard and counts, if someone has no pieces at all left
+		// if so, the game ends and the winner is displayed
+		// if not, the game continues
+
+		Tile[] gameBoard = Board.getBoard();
+		int whitePieces = 0;
+		int blackPieces = 0;
+		for(Tile tile : gameBoard){
+			if(tile.hasPiece()){
+				if(tile.getPiece().getColour() == Piece.Color.WHITE){
+					whitePieces++;
+				} else {
+					blackPieces++;
+				}
+			}
+		}
+		if(whitePieces == 0){
+			createGameEnd(Piece.Color.WHITE);
+		}
+		if(blackPieces == 0){
+			createGameEnd(Piece.Color.BLACK);
+		}
+	}
+
+	private void createGameEnd(Piece.Color color) {
+		/*
+		creats a stage that displays the winner
+		 */
+
+		// TODO
+	}
+
+	public static Piece.Color getTurn(){
+		return gameState == Turn.PLAYERWHITE ? Piece.Color.WHITE : Piece.Color.BLACK;
 	}
 }

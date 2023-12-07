@@ -1,7 +1,6 @@
 package com.senetboom.game;
 
 import com.badlogic.gdx.Gdx;
-import com.boomchess.game.BoomChess;
 
 public class RelativeResizer {
     /*

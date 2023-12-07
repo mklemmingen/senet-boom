@@ -1,42 +1,40 @@
 package com.senetboom.game;
 
-import java.util.ArrayList;
-
 public class Piece {
     public enum Color {
         BLACK,
         WHITE,
     }
 
-    public enum State {
-        NORMAL,
-        SELECTED
-    }
-
-    private Color colour;
-    private State state;
+    private final Color colour;
+    private boolean rebirthProtection;
 
     public Piece(Color color) {
         this.colour = color;
-        this.state = State.NORMAL;
+        this.rebirthProtection = false;
     }
 
-    public ArrayList<Tile> calculateMove(int x, int y, int newX, int newY) {
-        // calculate if the move is valid
-        // if it is, return true
-        // if it isn't, return false
-        return null;
+    public void checkMove(int currentIndex, int stickRoll) {
+        // calculate if the move to currentIndex+stickRoll is valid
+        Tile[] board = Board.getBoard();
+        if(board[currentIndex].isMoveValid(currentIndex, stickRoll)){
+            // if yes, add currentIndex+stickRoll to the arraylist of valid moves
+            SenetBoom.possibleMoves.add(currentIndex+stickRoll);
+            // if yes, put the targetIndex into the possibleMove variables of SenetBoom
+            SenetBoom.possibleMove = currentIndex+stickRoll;
+        }
+        SenetBoom.renderBoard();
     }
 
     public Color getColour() {
         return this.colour;
     }
 
-    public State getState() {
-        return this.state;
+    public boolean hasProtection() {
+        return this.rebirthProtection;
     }
 
-    public void setState(State state) {
-        this.state = state;
+    public void switchProtection() {
+        this.rebirthProtection = !this.rebirthProtection;
     }
 }

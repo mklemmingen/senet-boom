@@ -5,8 +5,6 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.ui.Stack;
-import com.badlogic.gdx.utils.Array;
 
 public class Typewriter {
     /*
@@ -124,10 +122,10 @@ public class Typewriter {
 
     class Speech extends Actor {
         private final String text;
-        private StringBuilder displayedText;
+        private final StringBuilder displayedText;
         private final float x;
         private final float y;
-        private float time;
+        private final float time;
         private float timePassed;
         private float displayDuration;
         private final BitmapFont font;
@@ -151,7 +149,7 @@ public class Typewriter {
             this.displayDuration = 2f; // Duration to display the complete text
 
             // Initialize the font
-            font = new BitmapFont(); // Use LibGDX's default font. You can also use your custom font.
+            font = new BitmapFont(); // Uses LibGDX's default font.
             font.setColor(Color.BLACK); // Set the font color to black
         }
 

@@ -2,7 +2,6 @@ package com.senetboom.game;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Music;
-import com.boomchess.game.BoomChess;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +48,7 @@ public class MusicPlaylist {
         currentIndex = randomIndex;
         Music playSong = songs.get(currentIndex);
         playSong.play();
-        playSong.setVolume(BoomChess.volume);
+        playSong.setVolume(SenetBoom.volume);
     }
 
 

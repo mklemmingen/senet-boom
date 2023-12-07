@@ -1,7 +1,5 @@
 package com.senetboom.game;
 
-import com.badlogic.gdx.audio.Sound;
-
 import java.util.List;
 
 public class RandomText {

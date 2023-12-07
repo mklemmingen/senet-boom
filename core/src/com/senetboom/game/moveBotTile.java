@@ -3,6 +3,7 @@ package com.senetboom.game;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Stack;
+
 import static com.senetboom.game.SenetBoom.tileSize;
 
 public class moveBotTile {
@@ -115,7 +116,7 @@ public class moveBotTile {
                 isMoving = false;
 
                 // resets Empty Variables
-                SenetBoom.emptyVariables = new int[0];
+                SenetBoom.emptyVariable = -1;
             }
         }
     }
