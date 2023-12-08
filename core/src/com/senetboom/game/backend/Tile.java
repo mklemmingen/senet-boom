@@ -67,7 +67,7 @@ public class Tile implements Move {
         }
 
         // for rebirth protection and loss if piece can hit the pawn with protection
-        if(board[targetIndex].getPiece().hasProtection()) {
+        if(board[targetIndex].hasPiece() && board[targetIndex].getPiece().hasProtection()) {
             board[targetIndex].getPiece().switchProtection(); // lose protection
             SenetBoom.renderBoard(); // target piece lost protection
             return false; // piece can only land on a piece with rebirth protection
@@ -157,14 +157,16 @@ public class Tile implements Move {
                     if(board[14].hasPiece()){
                         for(int i = 13; i >= 0; i--){
                             if(!(board[i].hasPiece())){
-                                // recursive since lazy
-                                board[newIndex].movePiece(i);
+                                board[i].setPiece(board[newIndex].getPiece());
+                                board[newIndex].removePiece();
                                 break;
                             }
                         }
                     } else {
-                        // recursive approach to not have to write Rebirth
-                        board[newIndex].movePiece(14);
+                        board[newIndex].setPiece(board[index].getPiece());
+                        board[index].removePiece();
+                        // piece now on rebirth, gets protection
+                        board[newIndex].getPiece().switchProtection();
                     }
                     break;
                 case REBIRTH:

@@ -22,17 +22,46 @@ import static com.senetboom.game.backend.Board.setAllowedTile;
 
 public class GameStage {
 
-    public static Table mapTable;
-
-    public static Stage drawBoard() {
-
-        inGame = true;
+    public static Stage drawMap() {
 
         Stage stage = new Stage();
 
         // create a root table for the tiles
         Table root = new Table();
         root.setFillParent(true);
+
+        // iterate through the board, at each tile
+        final Tile[] board = getBoard();
+
+        // first row
+        for(int i=0; i<10; i++) {
+            createMapStacks(board, root, i);
+        }
+
+        root.row();
+
+        // second row
+        for(int i=19; i>=10; i--) {
+            createMapStacks(board, root, i);
+        }
+
+        root.row();
+
+        // third row
+        for(int i=20; i<30; i++) {
+            createMapStacks(board, root, i);
+        }
+
+        stage.addActor(root);
+
+        return stage;
+    }
+
+    public static Stage drawBoard() {
+
+        inGame = true;
+
+        Stage stage = new Stage();
 
         // create a root table for the pawns
         Table pawnRoot = new Table();
@@ -44,30 +73,38 @@ public class GameStage {
 
         // first row
         for(int i=0; i<10; i++) {
-            createStacks(board, root, pawnRoot, i);
+            createStacks(board, pawnRoot, i);
         }
 
         pawnRoot.row();
-        root.row();
 
         // second row
         for(int i=19; i>=10; i--) {
-            createStacks(board, root, pawnRoot, i);
+            createStacks(board, pawnRoot, i);
         }
 
         pawnRoot.row();
-        root.row();
 
         // third row
         for(int i=20; i<30; i++) {
-            createStacks(board, root, pawnRoot, i);
+            createStacks(board, pawnRoot, i);
         }
 
-        stage.addActor(root);
         stage.addActor(pawnRoot);
 
         // add a Table with a single EXIT and OPTION Button
         Table exitTable = new Table();
+
+        // add a skipTurn button
+        TextButton skipTurnButton = new TextButton("SKIP TURN", skin);
+        skipTurnButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                SenetBoom.skipTurn = true;
+            }
+        });
+        exitTable.add(skipTurnButton).padBottom(tileSize/4);
+        exitTable.row();
 
         // add the Options button
         TextButton optionsButton = new TextButton("OPTIONS", skin);
@@ -96,51 +133,8 @@ public class GameStage {
         return stage;
     }
 
-    public static void createStacks(final Tile[] board, Table root, Table pawnRoot, int i){
+    public static void createStacks(final Tile[] board, Table pawnRoot, final int i){
         final Tile tile = board[i];
-
-        // ----------------- Tile Stack -----------------
-
-        // for the stack below being the tile of the board
-        final Stack stack = new Stack();
-
-        stack.setSize(tileSize, tileSize);
-
-        // add a png of a tile texture to the stack
-        Image tileTexture = new Image(SenetBoom.tileTexture);
-        tileTexture.setSize(tileSize, tileSize);
-        stack.addActor(tileTexture);
-
-        // if the tile has a special state, draw the special state
-        if(tile.hasSpecialState()) {
-            Image specialState;
-            switch(tile.getSpecialState()) {
-                case HAPPY:
-                    // draw a house to the stack
-                    specialState = new Image(happy);
-                    break;
-                case WATER:
-                    // draw water to the stack
-                    specialState = new Image(water);
-                    break;
-                case SAFE:
-                    // draw a safe tile to the stack
-                    specialState = new Image(safe);
-                    break;
-                case REBIRTH:
-                    // draw a rebirth tile to the stack
-                    specialState = new Image(rebirth);
-                    break;
-                default:
-                    // draw an empty tile to the stack
-                    specialState = new Image(emptyTexture);
-                    break;
-            }
-            specialState.setSize(tileSize, tileSize);
-            stack.addActor(specialState);
-        }
-
-        root.add(stack);
 
         // ----------------- Pawn Stack -----------------
 
@@ -190,9 +184,7 @@ public class GameStage {
                     // Get the team color of the current tile
                     Tile[] gameBoard = Board.getBoard();
 
-                    int tile = SenetBoom.calculateTilebyPx((int) x, (int) y);
-
-                    Piece.Color teamColor = gameBoard[tile].getPiece().getColour();
+                    Piece.Color teamColor = gameBoard[i].getPiece().getColour();
                     // If it's not the current team's turn, cancel the drag and return
                     if (!(teamColor == SenetBoom.getTurn())) {
                         event.cancel();
@@ -201,9 +193,11 @@ public class GameStage {
                         return;
                     }
 
-                    if(board[tile].isMoveValid(board[tile].getPosition(), currentStickValue)){
-                        setAllowedTile(board[tile].getPosition()+currentStickValue);
+                    if(board[i].isMoveValid(board[i].getPosition(), currentStickValue)){
+                        setAllowedTile(board[i].getPosition()+currentStickValue);
                     }
+
+                    pawnStack.toFront(); // bring to the front
 
                     // If it's the current team's turn, continue with the drag
                 }
@@ -223,7 +217,7 @@ public class GameStage {
                     // Get the position of the tileWidget relative to the parent actor (the gameBoard)
                     Vector2 localCoords = new Vector2(x, y);
                     // Convert the position to stage (screen) coordinates
-                    Vector2 screenCoords = stack.localToStageCoordinates(localCoords);
+                    Vector2 screenCoords = pawnStack.localToStageCoordinates(localCoords);
 
                     System.out.println("\n Drag stopped at screen position: " + screenCoords.x + ", "
                             + screenCoords.y + "\n");
@@ -254,7 +248,52 @@ public class GameStage {
                 }
             }); // end of listener creation
         }
-
         pawnRoot.add(pawnStack);
+    }
+
+    public static void createMapStacks(final Tile[] board, Table root, int i){
+        final Tile tile = board[i];
+
+        // ----------------- Tile Stack -----------------
+
+        // for the stack below being the tile of the board
+        final Stack stack = new Stack();
+
+        stack.setSize(tileSize, tileSize);
+
+        // add a png of a tile texture to the stack
+        Image tileTexture = new Image(SenetBoom.tileTexture);
+        tileTexture.setSize(tileSize, tileSize);
+        stack.addActor(tileTexture);
+
+        // if the tile has a special state, draw the special state
+        if(tile.hasSpecialState()) {
+            Image specialState;
+            switch(tile.getSpecialState()) {
+                case HAPPY:
+                    // draw a house to the stack
+                    specialState = new Image(happy);
+                    break;
+                case WATER:
+                    // draw water to the stack
+                    specialState = new Image(water);
+                    break;
+                case SAFE:
+                    // draw a safe tile to the stack
+                    specialState = new Image(safe);
+                    break;
+                case REBIRTH:
+                    // draw a rebirth tile to the stack
+                    specialState = new Image(rebirth);
+                    break;
+                default:
+                    // draw an empty tile to the stack
+                    specialState = new Image(emptyTexture);
+                    break;
+            }
+            specialState.setSize(tileSize, tileSize);
+            stack.addActor(specialState);
+        }
+        root.add(stack);
     }
 }

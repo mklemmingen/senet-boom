@@ -8,14 +8,18 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.senetboom.game.backend.*;
+import com.senetboom.game.frontend.actors.ExtraTurnActor;
 import com.senetboom.game.frontend.stages.GameStage;
 import com.senetboom.game.frontend.stages.MainMenu;
 import com.senetboom.game.frontend.special.RelativeResizer;
 import com.senetboom.game.frontend.text.Typewriter;
+import com.badlogic.gdx.scenes.scene2d.ui.Stack;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
 
 public class SenetBoom extends ApplicationAdapter {
 
@@ -72,10 +76,6 @@ public class SenetBoom extends ApplicationAdapter {
 	public static Texture blackpiece;
 	public static Texture whitepiece;
 
-	// for the selected pieces textures
-	Texture blackpieceSelected;
-	Texture whitepieceSelected;
-
 	// for the turn constant
 	static Turn gameState;
 
@@ -98,13 +98,10 @@ public class SenetBoom extends ApplicationAdapter {
 	public static Typewriter typeWriter;
 
 	// for knowing when to skip the Turn
-	public boolean skipTurn;
+	public static boolean skipTurn;
 
 	// for setting to true once the sticks are thrown
 	public boolean sticksThrown = false;
-
-	// relative resizer
-	public static RelativeResizer relativeResizer;
 
 	public static Texture logo;
 
@@ -134,6 +131,32 @@ public class SenetBoom extends ApplicationAdapter {
 	// texture for the tile
 	public static Texture tileTexture;
 
+	// map stage
+	public static Stage mapStage;
+
+	// boolean for an extra turn
+	public static boolean extraTurn;
+	// texture
+	public static Texture extraTurnTexture;
+
+	//stage for extra turn
+	public static Stage extraTurnStage;
+
+	// stick value Stage
+	private static Stage stickValueStage;
+
+	// textures for the sticks
+	public static Texture blackStick;
+	public static Texture whiteStick;
+
+	// number textures
+	public static Texture number0;
+	public static Texture number1;
+	public static Texture number2;
+	public static Texture number3;
+	public static Texture number4;
+	public static Texture number6;
+
 	@Override
 	public void create () {
 		batch = new SpriteBatch();
@@ -153,6 +176,9 @@ public class SenetBoom extends ApplicationAdapter {
 		hitStage = new Stage();
 		helpOverlayStage = new Stage();
 		handStage = new Stage();
+		mapStage = new Stage();
+		extraTurnStage = new Stage();
+		stickValueStage = new Stage();
 
 		displayHelp = false;
 		skipTurn = false;
@@ -175,6 +201,19 @@ public class SenetBoom extends ApplicationAdapter {
 		logo = new Texture("logoSenet.png");
 		tileTexture = new Texture("textures/tile.png");
 		emptyTexture = new Texture("textures/empty.png");
+		extraTurnTexture = new Texture("textures/extraTurn.png");
+
+		// for the sticks
+		blackStick = new Texture("textures/blackStick.png");
+		whiteStick = new Texture("textures/whiteStick.png");
+
+		// for the numbers
+		number0 = new Texture("textures/0.png");
+		number1 = new Texture("textures/1.png");
+		number2 = new Texture("textures/2.png");
+		number3 = new Texture("textures/3.png");
+		number4 = new Texture("textures/4.png");
+		number6 = new Texture("textures/6.png");
 
 		// for the empty tile texture
 		emptyTexture = new Texture("textures/empty.png");
@@ -187,6 +226,7 @@ public class SenetBoom extends ApplicationAdapter {
 
 		gameState = Turn.PLAYERWHITE;
 
+		RelativeResizer.init();
 		Gdx.input.setInputProcessor(currentStage);
 
 		createMenu();
@@ -200,7 +240,6 @@ public class SenetBoom extends ApplicationAdapter {
 		batch.draw(background, 0, 0);
 		batch.end();
 
-		/*
 		// relative resizer
 		// check to make sure the screen hasn't resized
 		if(RelativeResizer.ensure()) {
@@ -213,7 +252,11 @@ public class SenetBoom extends ApplicationAdapter {
 			// sets viewport correctly
 			resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		}
-		*/
+
+		if(inGame){
+			mapStage.act();
+			mapStage.draw();
+		}
 
 		// from scene2dUi
 		currentStage.act();
@@ -236,6 +279,7 @@ public class SenetBoom extends ApplicationAdapter {
 
 		if(inGame){
 			// all stages affiliated with the game ongoing
+
 			stickStage.act();
 			stickStage.draw();
 
@@ -247,6 +291,15 @@ public class SenetBoom extends ApplicationAdapter {
 
 			handStage.act();
 			handStage.draw();
+
+			extraTurnStage.act();
+			extraTurnStage.draw();
+
+			if(!(sticksTumbling)){
+				// display the current stick value
+				stickValueStage.act();
+				stickValueStage.draw();
+			}
 
 			gameEndStage.act();
 			gameEndStage.draw();
@@ -266,7 +319,8 @@ public class SenetBoom extends ApplicationAdapter {
 		// set waiting for a stickThrow
 		// wait for a stickThrow
 		if(sticksTumbling){
-			Stick.update();
+			Stick.update(Gdx.graphics.getDeltaTime());
+			return;
 		}
 		else{
 			// ----------------- help part - add later
@@ -292,10 +346,14 @@ public class SenetBoom extends ApplicationAdapter {
 		// check, beside if(legitMove) above, if the player has decided to push the skip turn button
 		if (skipTurn) {
 			// add a typewriter of ANGER or CONFUSED or SAD
+
+			/* TODO
 			if (gameState == Turn.PLAYERWHITE)
 				typeWriter.makeSpeech(Typewriter.Emotion.ANGRY, Typewriter.Character.WHITE);
 			else
 				typeWriter.makeSpeech(Typewriter.Emotion.ANGRY, Typewriter.Character.BLACK);
+			 */
+
 			skipTurn = false;
 			// other players turn
 			switchTurn();
@@ -304,10 +362,17 @@ public class SenetBoom extends ApplicationAdapter {
 
 	private void switchTurn() {
 		// switch the turn
-		if (gameState == Turn.PLAYERWHITE) {
-			gameState = Turn.PLAYERBLACK;
+		if(extraTurn){
+			// player has an extra turn
+			extraTurn = false;
+			// add extra Turn Actor
+			addExtraTurnActor();
 		} else {
-			gameState = Turn.PLAYERWHITE;
+			if (gameState == Turn.PLAYERWHITE) {
+				gameState = Turn.PLAYERBLACK;
+			} else {
+				gameState = Turn.PLAYERWHITE;
+			}
 		}
 		renderBoard();
 		gameSticks = new Stick();
@@ -318,6 +383,26 @@ public class SenetBoom extends ApplicationAdapter {
 	public void dispose () {
 		batch.dispose();
 		background.dispose();
+		// dispose of all textures
+		blackpiece.dispose();
+		whitepiece.dispose();
+		happy.dispose();
+		water.dispose();
+		safe.dispose();
+		rebirth.dispose();
+		rebirthProtection.dispose();
+		logo.dispose();
+		tileTexture.dispose();
+		emptyTexture.dispose();
+		extraTurnTexture.dispose();
+		blackStick.dispose();
+		whiteStick.dispose();
+		number0.dispose();
+		number1.dispose();
+		number2.dispose();
+		number3.dispose();
+		number4.dispose();
+		number6.dispose();
 	}
 
 	public static Coordinate calculatePXbyTile(int x, int y) {
@@ -325,10 +410,8 @@ public class SenetBoom extends ApplicationAdapter {
 		// the board is centered on the screen
 		int screenWidth = 1536;
 		int screenHeight = 896;
-		int tileWidth = 80;
-		int tileHeight = 80;
-		int boardWidth = tileWidth * 10;
-		int boardHeight = tileHeight * 3;
+		int boardWidth = (int) (tileSize * 10);
+		int boardHeight = (int) (tileSize * 3);
 
 		// Calculate starting position of the board
 		int boardStartX = (screenWidth - boardWidth) / 2;
@@ -338,12 +421,12 @@ public class SenetBoom extends ApplicationAdapter {
 		int posX, posY;
 
 		if (y == 1) { // Middle row (reversed)
-			posX = boardStartX + (9 - x) * tileWidth;
+			posX = (int) (boardStartX + (9 - x) * tileSize);
 		} else { // Top and bottom rows
-			posX = boardStartX + x * tileWidth;
+			posX = (int) (boardStartX + x * tileSize);
 		}
 
-		posY = boardStartY + y * tileHeight;
+		posY = (int) (boardStartY + y * tileSize);
 
 		return new Coordinate(posX, posY);
 	}
@@ -353,23 +436,16 @@ public class SenetBoom extends ApplicationAdapter {
 		// the board is centered on the screen
 		int screenWidth = 1536;
 		int screenHeight = 896;
-		int tileWidth = 80;
-		int tileHeight = 80;
-		int boardWidth = tileWidth * 10;
-		int boardHeight = tileHeight * 3;
+		int boardWidth = (int) (tileSize * 10);
+		int boardHeight = (int) (tileSize * 3);
 
 		// Calculate starting position of the board
 		int boardStartX = (screenWidth - boardWidth) / 2;
 		int boardStartY = (screenHeight - boardHeight) / 2;
 
 		// Calculate which tile
-		int tileX = (x - boardStartX) / tileWidth;
-		int tileY = (y - boardStartY) / tileHeight;
-
-		// Ensure tileX and tileY are within the board bounds
-		if (tileX < 0 || tileX >= 10 || tileY < 0 || tileY >= 3) {
-			return -1; // Return -1 or other error value if not within the board
-		}
+		int tileX = (int) ((x - boardStartX) / tileSize);
+		int tileY = (int) ((y - boardStartY) / tileSize);
 
 		int tile;
 		if (tileY == 1) { // Middle row (reversed)
@@ -392,9 +468,95 @@ public class SenetBoom extends ApplicationAdapter {
 	}
 
 	public static void renderBoard() {
+		stickValueStage.clear();
+		stickValueStage = SenetBoom.drawStickValue(currentStickValue);
+
+		mapStage.clear();
+		mapStage = GameStage.drawMap();
 		currentStage.clear();
 		currentStage = GameStage.drawBoard();
 		Gdx.input.setInputProcessor(currentStage);
+	}
+
+	private static Stage drawStickValue(int currentStickValue) {
+
+		Stage stage = new Stage();
+
+		// scene 2D UI stuff
+		Stack rawValue = new Stack();
+		Table sticks = new Table();
+
+		Image number;
+		// switch statement for currentStickValue 0,1,2,3,4,6
+		switch(currentStickValue){
+			case 0:
+				// draw 4 black sticks
+				// draw 0 white sticks
+				sticks.add(new Image(blackStick));
+				sticks.add(new Image(blackStick));
+				sticks.add(new Image(blackStick));
+				sticks.add(new Image(blackStick));
+				number = new Image(number0);
+				rawValue.add(number);
+				break;
+			case 1:
+				// draw 3 black sticks
+				// draw 1 white sticks
+				sticks.add(new Image(blackStick));
+				sticks.add(new Image(blackStick));
+				sticks.add(new Image(blackStick));
+				sticks.add(new Image(whiteStick));
+				number = new Image(number1);
+				rawValue.add(number);
+				break;
+			case 2:
+				// draw 2 black sticks
+				// draw 2 white sticks
+				sticks.add(new Image(blackStick));
+				sticks.add(new Image(blackStick));
+				sticks.add(new Image(whiteStick));
+				sticks.add(new Image(whiteStick));
+				number = new Image(number2);
+				rawValue.add(number);
+				break;
+			case 3:
+				// draw 1 black sticks
+				// draw 3 white sticks
+				sticks.add(new Image(blackStick));
+				sticks.add(new Image(whiteStick));
+				sticks.add(new Image(whiteStick));
+				sticks.add(new Image(whiteStick));
+				number = new Image(number3);
+				rawValue.add(number);
+				break;
+			case 4:
+				// draw 0 black sticks
+				// draw 4 white sticks
+				sticks.add(new Image(whiteStick));
+				sticks.add(new Image(whiteStick));
+				sticks.add(new Image(whiteStick));
+				sticks.add(new Image(whiteStick));
+				number = new Image(number4);
+				rawValue.add(number);
+				break;
+			case 6:
+				// draw 4 black sticks
+				// draw 0 white sticks
+				sticks.add(new Image(blackStick));
+				sticks.add(new Image(blackStick));
+				sticks.add(new Image(blackStick));
+				sticks.add(new Image(blackStick));
+				number = new Image(number6);
+				break;
+		}
+
+		sticks.setPosition(tileSize, tileSize*2);
+		sticks.setSize(tileSize*2, tileSize*2);
+		stage.addActor(sticks);
+
+		rawValue.setPosition(tileSize, tileSize*2.25f);
+		stage.addActor(rawValue);
+		return stage;
 	}
 
 	public static void createMenu() {
@@ -438,5 +600,11 @@ public class SenetBoom extends ApplicationAdapter {
 
 	public static Piece.Color getTurn(){
 		return gameState == Turn.PLAYERWHITE ? Piece.Color.WHITE : Piece.Color.BLACK;
+	}
+
+	public static void addExtraTurnActor(){
+		ExtraTurnActor newTurn = new ExtraTurnActor();
+		extraTurnStage.addActor(newTurn);
+		System.out.println("Added ExtraTurn Actor to Screen\n");
 	}
 }
