@@ -4,8 +4,10 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
@@ -157,6 +159,17 @@ public class SenetBoom extends ApplicationAdapter {
 	public static Texture number4;
 	public static Texture number6;
 
+	// for the game start
+	public static boolean startUndecided;
+	public static Stage deciderStage;
+
+	// textures of starter
+	public static Texture whiteStarts;
+	public static Texture blackStarts;
+
+	// boolean for the decider
+	public static boolean deciderStarted;
+
 	@Override
 	public void create () {
 		batch = new SpriteBatch();
@@ -179,6 +192,7 @@ public class SenetBoom extends ApplicationAdapter {
 		mapStage = new Stage();
 		extraTurnStage = new Stage();
 		stickValueStage = new Stage();
+		deciderStage = new Stage();
 
 		displayHelp = false;
 		skipTurn = false;
@@ -202,6 +216,8 @@ public class SenetBoom extends ApplicationAdapter {
 		tileTexture = new Texture("textures/tile.png");
 		emptyTexture = new Texture("textures/empty.png");
 		extraTurnTexture = new Texture("textures/extraTurn.png");
+		whiteStarts = new Texture("textures/whiteStart.png");
+		blackStarts = new Texture("textures/blackStarts.png");
 
 		// for the sticks
 		blackStick = new Texture("textures/blackStick.png");
@@ -281,15 +297,25 @@ public class SenetBoom extends ApplicationAdapter {
 			// all stages affiliated with the game ongoing
 
 			if(gameStarted){
-				// throw the sticks!
-				if(!sticksThrown){
-					// throw the sticks
-					gameSticks = new Stick();
-					currentStickValue = gameSticks.getValue();
-					sticksThrown = true;
-					// add the stickValueStage
-					stickValueStage = SenetBoom.drawStickValue(currentStickValue);
+				// decide who starts!
+				if(startUndecided){
+					if(!(deciderStarted)) {
+						// randomly decides the first turn state + displays this deciding on the screen
+						decideStarter();
+					}
+
+					deciderStage.act();
+					deciderStage.draw();
+					return;
 				}
+
+				// throw the sticks!
+				gameSticks = new Stick();
+				currentStickValue = gameSticks.getValue();
+				sticksThrown = true;
+				// add the stickValueStage
+				stickValueStage = SenetBoom.drawStickValue(currentStickValue);
+				gameStarted = false;
 			}
 
 			// stick animation
@@ -398,6 +424,73 @@ public class SenetBoom extends ApplicationAdapter {
 		currentStickValue = gameSticks.getValue();
 	}
 
+	private void decideStarter() {
+
+		deciderStarted = true;
+
+		// random decide if turn White or black
+		int random = (int) (Math.random() * 2);
+		if(random == 0){
+			gameState = Turn.PLAYERWHITE;
+		} else {
+			gameState = Turn.PLAYERBLACK;
+		}
+		// adds the Decider to the stage
+		Decider decider = new Decider(gameState);
+		deciderStage.addActor(decider);
+	}
+
+	private class Decider extends Actor{
+		// after 2 seconds, it will set startDecided to true
+		float X;
+		float Y;
+		// elapsed time since addition to stage
+		float elapsed = 0;
+		// this is the maximum duration that the bubble will be on the screen
+		final float MAX_DURATION = 2f;
+		// this is the stack of the bubble
+		Stack stack;
+
+		public Decider(Turn turn){
+			this.stack = new Stack();
+			stack.setSize(tileSize*4, tileSize*2);
+
+			if(turn == Turn.PLAYERWHITE){
+				stack.addActor(new Image(whiteStarts));
+			} else {
+				stack.addActor(new Image(blackStarts));
+			}
+
+			this.X = tileSize*8;
+			this.Y = tileSize*2;
+		}
+
+		@Override
+		public void act(float delta) {
+			/*
+			 * this method is called every frame to update the Actor
+			 */
+			super.act(delta);
+			elapsed += delta;
+			if (elapsed > MAX_DURATION) {
+				startUndecided = false;
+				remove(); // This will remove the actor from the stage
+			}
+		}
+
+		// Override the draw method to add the stack at the correct position
+		@Override
+		public void draw(Batch batch, float parentAlpha) {
+			/*
+			This method is called every frame to draw the starter indicator
+			 */
+			super.draw(batch, parentAlpha);
+			stack.setPosition(X, Y);
+			stack.draw(batch, parentAlpha);
+		}
+
+	}
+
 	@Override
 	public void dispose () {
 		batch.dispose();
@@ -422,6 +515,8 @@ public class SenetBoom extends ApplicationAdapter {
 		number3.dispose();
 		number4.dispose();
 		number6.dispose();
+		whiteStarts.dispose();
+		blackStarts.dispose();
 	}
 
 	public static Coordinate calculatePXbyTile(int x, int y) {

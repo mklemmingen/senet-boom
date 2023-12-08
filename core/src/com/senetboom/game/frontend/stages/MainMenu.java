@@ -52,8 +52,12 @@ public class MainMenu {
             public void changed(ChangeEvent event, Actor actor) {
 
                 Board.initializeBoard();
+
                 SenetBoom.gameStarted = true;
                 SenetBoom.inGame = true;
+                SenetBoom.startUndecided = true;
+                SenetBoom.deciderStarted = false;
+
                 renderBoard();
             }
         });
