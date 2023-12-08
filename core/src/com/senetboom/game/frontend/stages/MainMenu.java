@@ -50,6 +50,7 @@ public class MainMenu {
         play2Button.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+
                 Board.initializeBoard();
                 SenetBoom.gameStarted = true;
                 SenetBoom.inGame = true;

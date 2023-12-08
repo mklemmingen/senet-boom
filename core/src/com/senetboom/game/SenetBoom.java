@@ -280,27 +280,46 @@ public class SenetBoom extends ApplicationAdapter {
 		if(inGame){
 			// all stages affiliated with the game ongoing
 
+			if(gameStarted){
+				// throw the sticks!
+				if(!sticksThrown){
+					// throw the sticks
+					gameSticks = new Stick();
+					currentStickValue = gameSticks.getValue();
+					sticksThrown = true;
+					// add the stickValueStage
+					stickValueStage = SenetBoom.drawStickValue(currentStickValue);
+				}
+			}
+
+			// stick animation
 			stickStage.act();
 			stickStage.draw();
 
+			// for the explicit typewriter
 			typeWriterStage.act();
 			typeWriterStage.draw();
 
+			// for the switch animation (kinda like hit)
 			hitStage.act();
 			hitStage.draw();
 
+			// for the hand texture that follow the drag position of the piece
+			// depending on if white or black (from up or from down)
 			handStage.act();
 			handStage.draw();
 
+			// for the extra turn symbol
 			extraTurnStage.act();
 			extraTurnStage.draw();
 
-			if(!(sticksTumbling)){
-				// display the current stick value
+			if(!(sticksTumbling)) {
+				// display the current stick value if the sticks are not tumbling
 				stickValueStage.act();
 				stickValueStage.draw();
 			}
 
+			// for the display of the game having ended
 			gameEndStage.act();
 			gameEndStage.draw();
 
@@ -345,8 +364,8 @@ public class SenetBoom extends ApplicationAdapter {
 		// ----------------- skip turn part
 		// check, beside if(legitMove) above, if the player has decided to push the skip turn button
 		if (skipTurn) {
-			// add a typewriter of ANGER or CONFUSED or SAD
 
+			// add a typewriter of ANGER or CONFUSED or SAD
 			/* TODO
 			if (gameState == Turn.PLAYERWHITE)
 				typeWriter.makeSpeech(Typewriter.Emotion.ANGRY, Typewriter.Character.WHITE);
@@ -363,10 +382,10 @@ public class SenetBoom extends ApplicationAdapter {
 	private void switchTurn() {
 		// switch the turn
 		if(extraTurn){
-			// player has an extra turn
-			extraTurn = false;
 			// add extra Turn Actor
 			addExtraTurnActor();
+			// player has an extra turn
+			extraTurn = false;
 		} else {
 			if (gameState == Turn.PLAYERWHITE) {
 				gameState = Turn.PLAYERBLACK;
