@@ -231,6 +231,7 @@ public class Tile implements Move {
         if (board[newIndex].hasPiece()) {
             Piece piece2 = board[newIndex].getPiece();
             board[index].setPiece(piece2); // move the existing piece to the old position of the moving piece
+            board[newIndex].removePiece(); // remove the old piece from the new position
         }
 
         // Now, move the piece to the new tile
