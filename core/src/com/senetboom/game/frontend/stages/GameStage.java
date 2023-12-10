@@ -96,7 +96,7 @@ public class GameStage {
         Table exitTable = new Table();
 
         // add a skipTurn button
-        TextButton skipTurnButton = new TextButton("SKIP TURN", skin);
+        TextButton skipTurnButton = new TextButton("END TURN", skin);
         skipTurnButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -104,6 +104,17 @@ public class GameStage {
             }
         });
         exitTable.add(skipTurnButton).padBottom(tileSize/4);
+        exitTable.row();
+
+        // HELP BUTTON THAT SWITCHES THE BOOLEAN displayHelp
+        TextButton helpButton = new TextButton("HELP", skin);
+        helpButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                SenetBoom.displayHelp = !SenetBoom.displayHelp;
+            }
+        });
+        exitTable.add(helpButton).padBottom(tileSize/4);
         exitTable.row();
 
         // add the Options button
@@ -127,7 +138,7 @@ public class GameStage {
         });
         exitTable.add(exitButton).padBottom(tileSize/4);
 
-        exitTable.setPosition(Gdx.graphics.getWidth()-tileSize*3, tileSize*3);
+        exitTable.setPosition(Gdx.graphics.getWidth()-tileSize*3, tileSize*1.5f);
         stage.addActor(exitTable);
 
         return stage;
@@ -193,9 +204,19 @@ public class GameStage {
                         return;
                     }
 
+                    System.out.println("Current Stick Value: " + currentStickValue + "\n");
+                    System.out.println("Current Tile: " + board[i].getPosition() + "\n");
+                    System.out.println("Current Team" + teamColor + "\n");
                     if(board[i].isMoveValid(board[i].getPosition(), currentStickValue)){
+                        System.out.println("Move for this piece valid. Setting allowed tile.");
                         setAllowedTile(board[i].getPosition()+currentStickValue);
+                    } else{
+                        System.out.println("Move for this piece invalid");
                     }
+
+                    /*
+                    board[i].getPiece().checkMove(board[i].getPosition(), currentStickValue);
+                    */
 
                     pawnStack.toFront(); // bring to the front
 
@@ -223,6 +244,7 @@ public class GameStage {
                             + screenCoords.y + "\n");
 
                     int endTile = SenetBoom.calculateTilebyPx((int) screenCoords.x, (int) screenCoords.y);
+                    System.out.print("End Tile: " + endTile + "\n");
 
                     // for loop through validMoveTiles, at each tile we check for equality of currentCoord
                     // with the Coordinate
@@ -237,8 +259,10 @@ public class GameStage {
                         // Board.update with oldX, oldY, newX, newY
                         board[tile.getPosition()].movePiece(endTile);
                         SenetBoom.legitMove = true;
+                        System.out.println("Move valid as in check of tile to possibleMove");
+                    } else {
+                        System.out.println("Move invalid as in check of tile to possibleMove");
                     }
-
 
                     // and the possibleMove is cleared
                     possibleMove = -1; // for turning off the Overlay

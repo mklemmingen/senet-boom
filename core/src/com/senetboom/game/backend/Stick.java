@@ -116,6 +116,11 @@ public class Stick {
             if (elapsedTime > maxTime) {
                 sticksTumbling = false;
                 remove(); // This will remove the actor from the stage
+
+                if (stickValue == 1 || stickValue == 4 || stickValue == 0) {
+                    // add extra Turn Actor
+                    addExtraTurnActor();
+                }
             }
         }
     } // end of RollingSticks class
@@ -143,3 +148,4 @@ public class Stick {
         }
     }
 }
+

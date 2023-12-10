@@ -67,9 +67,9 @@ public class SenetBoom extends ApplicationAdapter {
 	Animation<TextureRegion> hitAnimation;
 
 	// helpOverlayStage
-	Stage helpOverlayStage;
+	static Stage helpOverlayStage;
 	Texture help;
-	boolean displayHelp;
+	public static boolean displayHelp;
 
 	// handStage
 	Stage handStage;
@@ -101,9 +101,6 @@ public class SenetBoom extends ApplicationAdapter {
 
 	// for knowing when to skip the Turn
 	public static boolean skipTurn;
-
-	// for setting to true once the sticks are thrown
-	public boolean sticksThrown = false;
 
 	public static Texture logo;
 
@@ -170,6 +167,28 @@ public class SenetBoom extends ApplicationAdapter {
 	// boolean for the decider
 	public static boolean deciderStarted;
 
+	// for when a turn has not been checked yet
+	public static boolean gameUnchecked;
+
+	// hint stage
+	public static Stage hintStage;
+
+	// for displaying the current Turn
+	public static Stage currentTurnStage;
+
+	// turn play textures
+	public static Texture whitePlays;
+	public static Texture blackPlays;
+
+	// texture for the help
+	public static Texture helpTexture;
+
+	// enum of turn
+	private enum Turn {
+		PLAYERWHITE,
+		PLAYERBLACK,
+	}
+
 	@Override
 	public void create () {
 		batch = new SpriteBatch();
@@ -193,6 +212,10 @@ public class SenetBoom extends ApplicationAdapter {
 		extraTurnStage = new Stage();
 		stickValueStage = new Stage();
 		deciderStage = new Stage();
+		hintStage = new Stage();
+		currentTurnStage = new Stage();
+
+		possibleMoves = new Array<Integer>();
 
 		displayHelp = false;
 		skipTurn = false;
@@ -231,6 +254,13 @@ public class SenetBoom extends ApplicationAdapter {
 		number4 = new Texture("textures/4.png");
 		number6 = new Texture("textures/6.png");
 
+		// help texture
+		helpTexture = new Texture("textures/rules.png");
+
+		// for the turn plays textures
+		whitePlays = new Texture("textures/whitePlays.png");
+		blackPlays = new Texture("textures/blackPlays.png");
+
 		// for the empty tile texture
 		emptyTexture = new Texture("textures/empty.png");
 
@@ -243,7 +273,11 @@ public class SenetBoom extends ApplicationAdapter {
 		gameState = Turn.PLAYERWHITE;
 
 		RelativeResizer.init();
+		resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+
 		Gdx.input.setInputProcessor(currentStage);
+
+		createHelpStage(); // for the help overlay that can be activated
 
 		createMenu();
 	}
@@ -304,15 +338,18 @@ public class SenetBoom extends ApplicationAdapter {
 						decideStarter();
 					}
 
+					// gets called till the timer in deciderStarter is up, then it sets startUndecided to false
 					deciderStage.act();
 					deciderStage.draw();
 					return;
 				}
 
+				updateLogoStage();
+				// first act of a new game:
 				// throw the sticks!
 				gameSticks = new Stick();
 				currentStickValue = gameSticks.getValue();
-				sticksThrown = true;
+				sticksTumbling = true;
 				// add the stickValueStage
 				stickValueStage = SenetBoom.drawStickValue(currentStickValue);
 				gameStarted = false;
@@ -339,89 +376,165 @@ public class SenetBoom extends ApplicationAdapter {
 			extraTurnStage.act();
 			extraTurnStage.draw();
 
+			// current turn stage
+			currentTurnStage.act();
+			currentTurnStage.draw();
+
 			if(!(sticksTumbling)) {
 				// display the current stick value if the sticks are not tumbling
 				stickValueStage.act();
 				stickValueStage.draw();
+			} else{
+				// waiting for the sticks to end tumbling ( its animation )
+				Stick.update(Gdx.graphics.getDeltaTime());
+				return;
 			}
 
 			// for the display of the game having ended
 			gameEndStage.act();
 			gameEndStage.draw();
 
+			// only if the sticks have stopped tumbling, and if the turn hasn't skipped,
+			// we can let a turn be processed
+			if (skipTurn) { // skip turn gets set to true if player pushed the skipTurn button
+
+				// add a typewriter of ANGER or CONFUSED or SAD
+				/* TODO
+				if (gameState == Turn.PLAYERWHITE)
+					typeWriter.makeSpeech(Typewriter.Emotion.ANGRY, Typewriter.Character.WHITE);
+				else
+					typeWriter.makeSpeech(Typewriter.Emotion.ANGRY, Typewriter.Character.BLACK);
+			 	*/
+
+				skipTurn = false;
+				// other players turn
+				switchTurn();
+			}
+
 			processTurn();
 		}
 	}
 
-	// enum of turn
-	private enum Turn {
-		PLAYERWHITE,
-		PLAYERBLACK,
-	}
-
 	public void processTurn() {
-		// --------------- stickThrow part
-		// set waiting for a stickThrow
-		// wait for a stickThrow
-		if(sticksTumbling){
-			Stick.update(Gdx.graphics.getDeltaTime());
-			return;
-		}
-		else{
-			// ----------------- help part - add later
-			// after thrown, check if any moves are even possible with the stick(dice) number
-			// if the next player has no moves possible, a slight hint gets added to the screen
-			// we run calculateMove on any piece of the player and if it returns null,
-			// the next player has no moves possible
 
-			// ----------------- legit Move part
+		// ----------------- help part - add later
+		// after thrown, check if any moves are even possible with the stick(dice) number
+		// if the next player has no moves possible, a slight hint gets added to the screen
+		// we run calculateMove on any piece of the player and if it returns null,
+		// the next player has no moves possible
 
-			// wait for a legitMove from a player of gameState
-			if(legitMove) {
-				// if not legitMove, waits for a legitMove switch around
-				// if legitMove, moves the piece in its respective dragStop Listener
-				// check if the game is over
-				checkForGameEnd();
-				// switch turn after completing the move
-				switchTurn();
+		if(gameUnchecked) {
+			if (gameState == Turn.PLAYERWHITE) {
+				// check if any moves are possible for the white player
+				// if not, add a hint to the screen
+				checkForNoMoves(Turn.PLAYERWHITE);
+				// if yes, remove the hint from the screen
+			} else {
+				// check if any moves are possible for the black player
+				// if not, add a hint to the screen
+				// if yes, remove the hint from the screen
+				checkForNoMoves(Turn.PLAYERBLACK);
 			}
+			gameUnchecked = false;
 		}
 
-		// ----------------- skip turn part
-		// check, beside if(legitMove) above, if the player has decided to push the skip turn button
-		if (skipTurn) {
+		// ----------------- legit Move part
 
-			// add a typewriter of ANGER or CONFUSED or SAD
-			/* TODO
-			if (gameState == Turn.PLAYERWHITE)
-				typeWriter.makeSpeech(Typewriter.Emotion.ANGRY, Typewriter.Character.WHITE);
-			else
-				typeWriter.makeSpeech(Typewriter.Emotion.ANGRY, Typewriter.Character.BLACK);
-			 */
+		// wait for a legitMove from a player of gameState
+		if(legitMove) {
+			// resets the legitMove check
+			legitMove = false;
 
-			skipTurn = false;
-			// other players turn
+			// if not legitMove, waits for a legitMove switch around
+			// if legitMove, moves the piece in its respective dragStop Listener
+			// check if the game is over
+			checkForGameEnd();
+			// switch turn after completing the move
 			switchTurn();
 		}
 	}
 
+	private void checkForNoMoves(Turn turn) {
+		// this method checks if the player has any moves possible
+		// if not, it adds a "No moves possible" Actor to the hint screen
+	}
+
+	// resize override
+	@Override
+	public void resize(int width, int height) {
+		// from scene2dUi
+		currentStage.getViewport().update(width, height, true);
+		if (showOptions) {
+			OptionsStage.getViewport().update(width, height, true);
+		}
+		if (showCredits) {
+			CreditsStage.getViewport().update(width, height, true);
+		}
+		if(inGame){
+			mapStage.getViewport().update(width, height, true);
+			stickStage.getViewport().update(width, height, true);
+			typeWriterStage.getViewport().update(width, height, true);
+			hitStage.getViewport().update(width, height, true);
+			helpOverlayStage.getViewport().update(width, height, true);
+			handStage.getViewport().update(width, height, true);
+			gameEndStage.getViewport().update(width, height, true);
+			extraTurnStage.getViewport().update(width, height, true);
+			stickValueStage.getViewport().update(width, height, true);
+			deciderStage.getViewport().update(width, height, true);
+			hintStage.getViewport().update(width, height, true);
+			currentTurnStage.getViewport().update(width, height, true);
+		}
+	}
+
+
 	private void switchTurn() {
 		// switch the turn
-		if(extraTurn){
-			// add extra Turn Actor
-			addExtraTurnActor();
+
+
+		if(extraTurn){ // if extraTurn is true, do not switch turn
 			// player has an extra turn
 			extraTurn = false;
-		} else {
+		}
+		else { // switch turn
 			if (gameState == Turn.PLAYERWHITE) {
 				gameState = Turn.PLAYERBLACK;
 			} else {
 				gameState = Turn.PLAYERWHITE;
 			}
 		}
-		renderBoard();
+
 		gameSticks = new Stick();
+
+		sticksTumbling = true;
+		gameUnchecked = true;
+
 		currentStickValue = gameSticks.getValue();
+
+		// update move logo
+		updateLogoStage();
+
+		renderBoard();
+		Gdx.input.setInputProcessor(currentStage);
+	}
+
+	private void updateLogoStage() {
+		// updates the logo according to the turn constant
+
+		// remove the old logo
+		currentTurnStage.clear();
+
+		Image currentTurner;
+		// add the new logo
+		if(gameState == Turn.PLAYERWHITE){
+			currentTurner = new Image(whitePlays);
+		} else {
+			currentTurner = new Image(blackPlays);
+		}
+		// upper left corner
+		currentTurner.setSize(tileSize*3, tileSize*2);
+		currentTurner.setPosition(tileSize*2, tileSize * 8);
+		currentTurnStage.addActor(currentTurner);
+
 	}
 
 	private void decideStarter() {
@@ -546,32 +659,46 @@ public class SenetBoom extends ApplicationAdapter {
 	}
 
 	public static int calculateTilebyPx(int x, int y) {
-		// the screen is 1536 to 896. The board is 3x10 tiles and each tile is 80x80px.
-		// the board is centered on the screen
 		int screenWidth = 1536;
 		int screenHeight = 896;
-		int boardWidth = (int) (tileSize * 10);
-		int boardHeight = (int) (tileSize * 3);
+		int inFuncTileSize = (int) tileSize;
+		int boardWidth = (inFuncTileSize * 10);
+		int boardHeight = (inFuncTileSize * 3);
 
-		// Calculate starting position of the board
+		// Calculate starting position (upper left corner) of the board
 		int boardStartX = (screenWidth - boardWidth) / 2;
 		int boardStartY = (screenHeight - boardHeight) / 2;
 
+		// Adjust the y-coordinate to reflect libGDX's top-left origin
+		int adjustedY = screenHeight - y;
+
 		// Calculate which tile
-		int tileX = (int) ((x - boardStartX) / tileSize);
-		int tileY = (int) ((y - boardStartY) / tileSize);
+		int tileX = (int) ((x - boardStartX) / inFuncTileSize);
+		int tileY = (int) ((adjustedY - boardStartY) / inFuncTileSize);
 
 		int tile;
-		if (tileY == 1) { // Middle row (reversed)
-			tile = tileY * 10 + (9 - tileX);
-		} else { // Top and bottom rows
-			tile = tileY * 10 + tileX;
+		if (tileY == 0) { // Top row
+			tile = tileX; // Tiles 0 to 9
+		} else if (tileY == 1) { // Middle row (reversed)
+			tile = 19 - tileX; // Tiles 19 to 10, in reverse
+		} else if (tileY == 2) { // Bottom row
+			tile = 20 + tileX; // Tiles 20 to 29
+		} else {
+			// Handle the case where the coordinates are outside the board
+			tile = -1;
 		}
 
 		return tile;
 	}
 
+
 	public static void createHelpStage() {
+		// load texture help
+		Image help = new Image(helpTexture);
+		help.setPosition(tileSize*13.1f, tileSize*2.7f);
+		help.setSize(tileSize*7, tileSize*9);
+		// add it to help stage
+		helpOverlayStage.addActor(help);
 	}
 
 	public static void createOptionsStage() {

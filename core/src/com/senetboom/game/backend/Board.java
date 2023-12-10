@@ -58,6 +58,7 @@ public class Board {
     }
 
     public static void setAllowedTile(int index) {
+        System.out.println("Allowed tile set to possible Move Variable");
         possibleMove = index;
     }
 

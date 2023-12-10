@@ -38,8 +38,7 @@ public class MainMenu {
         helpButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-
-                SenetBoom.createHelpStage();
+                SenetBoom.displayHelp = !SenetBoom.displayHelp;
             }
         });
         root.row();
