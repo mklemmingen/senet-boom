@@ -23,6 +23,8 @@ import com.senetboom.game.frontend.text.Typewriter;
 import com.badlogic.gdx.scenes.scene2d.ui.Stack;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 
+import java.util.ArrayList;
+
 public class SenetBoom extends ApplicationAdapter {
 
 	// for the stage the bot moves a piece on
@@ -36,7 +38,7 @@ public class SenetBoom extends ApplicationAdapter {
 
 	// for the possible moves that the bot uses for decision-making
 	// Array of int values
-	public static Array<Integer> possibleMoves;
+	public static ArrayList<Integer> possibleMoves;
 	public static int possibleMove;
 
 	// for the batch
@@ -183,6 +185,15 @@ public class SenetBoom extends ApplicationAdapter {
 	// texture for the help
 	public static Texture helpTexture;
 
+	// no moves texture
+	public static Texture noMovesTexture;
+
+	public static boolean displayHint = false;
+
+	public static Texture possibleMoveTexture;
+
+	public static boolean needRender;
+
 	// enum of turn
 	private enum Turn {
 		PLAYERWHITE,
@@ -215,7 +226,8 @@ public class SenetBoom extends ApplicationAdapter {
 		hintStage = new Stage();
 		currentTurnStage = new Stage();
 
-		possibleMoves = new Array<Integer>();
+		// possible Moves is a ArrayList of int values
+		possibleMoves = new ArrayList<Integer>();
 
 		displayHelp = false;
 		skipTurn = false;
@@ -254,6 +266,12 @@ public class SenetBoom extends ApplicationAdapter {
 		number4 = new Texture("textures/4.png");
 		number6 = new Texture("textures/6.png");
 
+		// possible Move Texture
+		possibleMoveTexture = new Texture("textures/possibleMove.png");
+
+		// no moves texture
+		noMovesTexture = new Texture("textures/noMovesTexture.png");
+
 		// help texture
 		helpTexture = new Texture("textures/rules.png");
 
@@ -272,7 +290,6 @@ public class SenetBoom extends ApplicationAdapter {
 
 		gameState = Turn.PLAYERWHITE;
 
-		RelativeResizer.init();
 		resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
 		Gdx.input.setInputProcessor(currentStage);
@@ -290,17 +307,9 @@ public class SenetBoom extends ApplicationAdapter {
 		batch.draw(background, 0, 0);
 		batch.end();
 
-		// relative resizer
-		// check to make sure the screen hasn't resized
-		if(RelativeResizer.ensure()) {
-			// if so, adapts tileSize already in RelativeResizer, we need to re-render the currentStage
-			if(inGame){
-				renderBoard();
-			} else { // creates a main menu stage as a failsafe
-				createMenu();
-			}
-			// sets viewport correctly
-			resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		if(needRender){
+			renderBoard();
+			needRender = false;
 		}
 
 		if(inGame){
@@ -367,6 +376,12 @@ public class SenetBoom extends ApplicationAdapter {
 			hitStage.act();
 			hitStage.draw();
 
+			// for the hints if displayHint turned on
+			if(displayHint) {
+				hintStage.act();
+				hintStage.draw();
+			}
+
 			// for the hand texture that follow the drag position of the piece
 			// depending on if white or black (from up or from down)
 			handStage.act();
@@ -406,9 +421,10 @@ public class SenetBoom extends ApplicationAdapter {
 					typeWriter.makeSpeech(Typewriter.Emotion.ANGRY, Typewriter.Character.BLACK);
 			 	*/
 
-				skipTurn = false;
 				// other players turn
 				switchTurn();
+
+				skipTurn = false;
 			}
 
 			processTurn();
@@ -416,27 +432,6 @@ public class SenetBoom extends ApplicationAdapter {
 	}
 
 	public void processTurn() {
-
-		// ----------------- help part - add later
-		// after thrown, check if any moves are even possible with the stick(dice) number
-		// if the next player has no moves possible, a slight hint gets added to the screen
-		// we run calculateMove on any piece of the player and if it returns null,
-		// the next player has no moves possible
-
-		if(gameUnchecked) {
-			if (gameState == Turn.PLAYERWHITE) {
-				// check if any moves are possible for the white player
-				// if not, add a hint to the screen
-				checkForNoMoves(Turn.PLAYERWHITE);
-				// if yes, remove the hint from the screen
-			} else {
-				// check if any moves are possible for the black player
-				// if not, add a hint to the screen
-				// if yes, remove the hint from the screen
-				checkForNoMoves(Turn.PLAYERBLACK);
-			}
-			gameUnchecked = false;
-		}
 
 		// ----------------- legit Move part
 
@@ -454,9 +449,91 @@ public class SenetBoom extends ApplicationAdapter {
 		}
 	}
 
-	private void checkForNoMoves(Turn turn) {
+	private void switchTurn() {
+		// switch the turn
+
+
+		if(extraTurn){ // if extraTurn is true, do not switch turn
+			// player has an extra turn
+			extraTurn = false;
+		}
+		else { // switch turn
+			if (gameState == Turn.PLAYERWHITE) {
+				gameState = Turn.PLAYERBLACK;
+			} else {
+				gameState = Turn.PLAYERWHITE;
+			}
+		}
+
+		possibleMoves = new ArrayList<Integer>();
+
+		gameSticks = new Stick();
+
+		currentStickValue = gameSticks.getValue();
+
+		// ----------------- help part
+		// after thrown, check if any moves are even possible with the stick(dice) number
+		// if the next player has no moves possible, a slight hint gets added to the screen
+		// we run calculateMove on any piece of the player and if it returns null,
+		// the next player has no moves possible
+
+		if (gameState == Turn.PLAYERWHITE) {
+			// check if any moves are possible for the white player
+			// if not, add a hint to the screen
+			checkForNoMoves(Turn.PLAYERWHITE);
+			// if yes, remove the hint from the screen
+		} else {
+			// check if any moves are possible for the black player
+			// if not, add a hint to the screen
+			// if yes, remove the hint from the screen
+			checkForNoMoves(Turn.PLAYERBLACK);
+		}
+
+		// ----------------- end of help part
+
+		renderBoard();
+
+		// update move logo
+		updateLogoStage();
+
+		renderBoard();
+		Gdx.input.setInputProcessor(currentStage);
+	}
+
+	private static void checkForNoMoves(Turn turn) {
+
+		hintStage.clear();
 		// this method checks if the player has any moves possible
 		// if not, it adds a "No moves possible" Actor to the hint screen
+		boolean noMoves = true;
+		Tile[] gameBoard = Board.getBoard();
+		Piece.Color currentTurn = turn == Turn.PLAYERWHITE ? Piece.Color.WHITE : Piece.Color.BLACK;
+		for(Tile tiles: gameBoard){
+			if(tiles.hasPiece()){
+				if(tiles.getPiece().getColour() == currentTurn){
+					// if the piece is of the current turn
+					// check if it has any moves possible
+					if(tiles.isMoveValid(tiles.getPosition(), currentStickValue)){
+						// if yes, set noMoves to false
+						noMoves = false;
+						possibleMoves.add(tiles.getPosition()+currentStickValue);
+					}
+				}
+			}
+		}
+		if(noMoves){
+			// if noMoves is true, add a hint to the screen
+			Image noMove = new Image(noMovesTexture);
+			// add at Position middle low
+			noMove.setPosition((float) Gdx.graphics.getWidth() /2, tileSize*2);
+			hintStage.addActor(noMove);
+
+			// add a typewriter of ANGER or CONFUSED or SAD
+			// TODO
+
+			// render the board so that the possible Moves can be displayed on the screen
+			renderBoard();
+		}
 	}
 
 	// resize override
@@ -484,37 +561,6 @@ public class SenetBoom extends ApplicationAdapter {
 			hintStage.getViewport().update(width, height, true);
 			currentTurnStage.getViewport().update(width, height, true);
 		}
-	}
-
-
-	private void switchTurn() {
-		// switch the turn
-
-
-		if(extraTurn){ // if extraTurn is true, do not switch turn
-			// player has an extra turn
-			extraTurn = false;
-		}
-		else { // switch turn
-			if (gameState == Turn.PLAYERWHITE) {
-				gameState = Turn.PLAYERBLACK;
-			} else {
-				gameState = Turn.PLAYERWHITE;
-			}
-		}
-
-		gameSticks = new Stick();
-
-		sticksTumbling = true;
-		gameUnchecked = true;
-
-		currentStickValue = gameSticks.getValue();
-
-		// update move logo
-		updateLogoStage();
-
-		renderBoard();
-		Gdx.input.setInputProcessor(currentStage);
 	}
 
 	private void updateLogoStage() {
@@ -709,13 +755,16 @@ public class SenetBoom extends ApplicationAdapter {
 	}
 
 	public static void renderBoard() {
+
 		stickValueStage.clear();
 		stickValueStage = SenetBoom.drawStickValue(currentStickValue);
 
 		mapStage.clear();
 		mapStage = GameStage.drawMap();
+
 		currentStage.clear();
 		currentStage = GameStage.drawBoard();
+
 		Gdx.input.setInputProcessor(currentStage);
 	}
 
@@ -728,18 +777,8 @@ public class SenetBoom extends ApplicationAdapter {
 		Table sticks = new Table();
 
 		Image number;
-		// switch statement for currentStickValue 0,1,2,3,4,6
+		// switch statement for currentStickValue 1,2,3,4,6
 		switch(currentStickValue){
-			case 0:
-				// draw 4 black sticks
-				// draw 0 white sticks
-				sticks.add(new Image(blackStick));
-				sticks.add(new Image(blackStick));
-				sticks.add(new Image(blackStick));
-				sticks.add(new Image(blackStick));
-				number = new Image(number0);
-				rawValue.add(number);
-				break;
 			case 1:
 				// draw 3 black sticks
 				// draw 1 white sticks
@@ -788,6 +827,7 @@ public class SenetBoom extends ApplicationAdapter {
 				sticks.add(new Image(blackStick));
 				sticks.add(new Image(blackStick));
 				number = new Image(number6);
+				rawValue.add(number);
 				break;
 		}
 

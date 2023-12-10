@@ -134,7 +134,12 @@ public class Tile implements Move {
             return false;
         }
 
-        Piece.Color colorTarget = board[targetIndex].getPiece().getColour();
+        Piece.Color colorTarget;
+        if(board[targetIndex].hasPiece()){
+            colorTarget = board[targetIndex].getPiece().getColour();
+        } else {
+            return true; // no piece on target tile, move is valid
+        }
 
         // Check adjacent tiles if they exist
         boolean checkBefore = targetIndex - 1 >= 0 && board[targetIndex - 1].hasPiece();
@@ -173,14 +178,14 @@ public class Tile implements Move {
 
         // Check for a blockade configuration in the path
         if (stickRoll == 4 || stickRoll == 6) {
-            if (checkBlockade(board, index, stickRoll, colorTarget)) {
+            if (!(checkBlockade(board, index, stickRoll, colorTarget))) {
                 System.out.println("Blockade configuration found for stick roll " + stickRoll + ".");
-                return true; // Blockade found, move is invalid
+                return false; // Blockade found, move is invalid
             }
         }
 
         System.out.println("No blockade configuration found for stick roll " + stickRoll + ".");
-        return false; // No blockade found, move is valid
+        return true; // No blockade found, move is valid
     }
 
 
@@ -198,14 +203,14 @@ public class Tile implements Move {
             if (board[index].hasPiece() && board[index].getPiece().getColour() == colorTarget) {
                 consecutiveCount++;
                 if (consecutiveCount == 3) {
-                    return true; // Found three consecutive enemy pieces
+                    return false; // Found three consecutive enemy pieces
                 }
             } else {
                 consecutiveCount = 0; // Reset count if sequence is broken
             }
         }
 
-        return false; // No sequence of three consecutive enemy pieces found
+        return true; // No sequence of three consecutive enemy pieces found
     }
 
     @Override
@@ -215,10 +220,12 @@ public class Tile implements Move {
         Piece piece = board[index].getPiece();
 
         // rebirth case:
-        if(board[newIndex].getPiece().hasProtection()) {
-            // if the piece has rebirth protection, remove it
-            board[newIndex].getPiece().switchProtection();
-            return;
+        if(board[newIndex].hasPiece()) {
+            if (board[newIndex].getPiece().hasProtection()) {
+                // if the piece has rebirth protection, remove it
+                board[newIndex].getPiece().switchProtection();
+                return;
+            }
         }
 
 

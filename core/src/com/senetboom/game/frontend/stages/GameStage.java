@@ -95,17 +95,6 @@ public class GameStage {
         // add a Table with a single EXIT and OPTION Button
         Table exitTable = new Table();
 
-        // add a skipTurn button
-        TextButton skipTurnButton = new TextButton("END TURN", skin);
-        skipTurnButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                SenetBoom.skipTurn = true;
-            }
-        });
-        exitTable.add(skipTurnButton).padBottom(tileSize/4);
-        exitTable.row();
-
         // HELP BUTTON THAT SWITCHES THE BOOLEAN displayHelp
         TextButton helpButton = new TextButton("HELP", skin);
         helpButton.addListener(new ChangeListener() {
@@ -115,6 +104,28 @@ public class GameStage {
             }
         });
         exitTable.add(helpButton).padBottom(tileSize/4);
+
+        // in the same row, add a hint button
+        TextButton hintButton = new TextButton("HINT", skin);
+        hintButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                SenetBoom.displayHint = !SenetBoom.displayHint;
+                needRender = true;
+            }
+        });
+        exitTable.add(hintButton).padBottom(tileSize/4).padLeft(tileSize/8);
+        exitTable.row();
+
+        // add a skipTurn button
+        TextButton skipTurnButton = new TextButton("END TURN", skin);
+        skipTurnButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                SenetBoom.skipTurn = true;
+            }
+        });
+        exitTable.add(skipTurnButton).padBottom(tileSize/4);
         exitTable.row();
 
         // add the Options button
@@ -289,6 +300,19 @@ public class GameStage {
         Image tileTexture = new Image(SenetBoom.tileTexture);
         tileTexture.setSize(tileSize, tileSize);
         stack.addActor(tileTexture);
+
+        // check if tile in possibleMoves
+        if(displayHint) {
+            needRender = true;
+            for (Integer move : possibleMoves) {
+                if (move == i) {
+                    // add a png of a tile texture to the stack
+                    Image possibleMoveTexture = new Image(SenetBoom.possibleMoveTexture);
+                    possibleMoveTexture.setSize(tileSize, tileSize);
+                    stack.addActor(possibleMoveTexture);
+                }
+            }
+        }
 
         // if the tile has a special state, draw the special state
         if(tile.hasSpecialState()) {

@@ -124,6 +124,7 @@ public class Stick {
                     // add extra Turn Actor
                     addExtraTurnActor();
                 }
+                renderBoard();
             }
         }
     } // end of RollingSticks class
@@ -142,13 +143,12 @@ public class Stick {
             // extraTurn to true
             SenetBoom.extraTurn = true;
             return stickValue;
-        } else if(stickValue == 0){// if zero white sides up, 4 black sides up
+        } else if(stickValue == 6){// if zero white sides up, 4 black sides up
             // extraTurn to false
             SenetBoom.extraTurn = true;
             return 6;
-        } else { // if any other value, return 0
-            return 0;
         }
+        return 0;
     }
 }
 
