@@ -29,6 +29,9 @@ public class Stick {
             this.stickRolls[i] = new StickRoll();
             this.stickValue += this.stickRolls[i].getStickRoll();
         }
+        if(stickValue == 0){ // 4 blacks equal value 6
+            stickValue = 6;
+        }
 
         // create RollingsSticks actor and add to stage
         RollingSticks rollingSticks = new RollingSticks();
