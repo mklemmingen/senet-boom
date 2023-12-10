@@ -204,11 +204,9 @@ public class Tile implements Move {
                 consecutiveCount = 0; // Reset count if sequence is broken
             }
         }
+
         return false; // No sequence of three consecutive enemy pieces found
     }
-
-
-
 
     @Override
     public void movePiece(int newIndex) {
