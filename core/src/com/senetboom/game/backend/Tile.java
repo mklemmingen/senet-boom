@@ -216,6 +216,14 @@ public class Tile implements Move {
         Tile[] board = Board.getBoard();
         Piece piece = board[index].getPiece();
 
+        // rebirth case:
+        if(board[newIndex].getPiece().hasProtection()) {
+            // if the piece has rebirth protection, remove it
+            board[newIndex].getPiece().switchProtection();
+            return;
+        }
+
+
         // First, remove the piece from its current tile
         board[index].removePiece();
 
