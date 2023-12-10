@@ -53,8 +53,8 @@ public class moveBotTile {
         // set the maximum duration fitting the length of the way that the soldier moves
         // per 50 pixel, add 0.5f to max duration
         // Begin: calculate Vector:
-        startPx = SenetBoom.calculatePXbyTile(startX, startY);
-        endPx = SenetBoom.calculatePXbyTile(endX, endY);
+        startPx = SenetBoom.calculatePXbyTile(startX);
+        endPx = SenetBoom.calculatePXbyTile(endX);
 
         Vector2 pointA = new Vector2(startPx.getX(), startPx.getY());
         Vector2 pointB = new Vector2(endPx.getX(), endPx.getY());

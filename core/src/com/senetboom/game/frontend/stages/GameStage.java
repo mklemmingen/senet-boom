@@ -7,6 +7,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.senetboom.game.SenetBoom;
 import com.senetboom.game.backend.Board;
+import com.senetboom.game.backend.Coordinate;
 import com.senetboom.game.backend.Piece;
 import com.senetboom.game.backend.Tile;
 import com.badlogic.gdx.math.Vector2;
@@ -100,7 +101,7 @@ public class GameStage {
         helpButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                SenetBoom.displayHelp = !SenetBoom.displayHelp;
+                displayHelp = !displayHelp;
             }
         });
         exitTable.add(helpButton).padBottom(tileSize/4);
@@ -110,7 +111,7 @@ public class GameStage {
         hintButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                SenetBoom.displayHint = !SenetBoom.displayHint;
+                displayHint = !displayHint;
                 needRender = true;
             }
         });
@@ -122,7 +123,7 @@ public class GameStage {
         skipTurnButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                SenetBoom.skipTurn = true;
+                skipTurn = true;
             }
         });
         exitTable.add(skipTurnButton).padBottom(tileSize/4);
@@ -144,7 +145,7 @@ public class GameStage {
         exitButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                SenetBoom.createMenu();
+                createMenu();
             }
         });
         exitTable.add(exitButton).padBottom(tileSize/4);
@@ -162,11 +163,11 @@ public class GameStage {
 
         // for the stack above being the pawn on the tile
         final Stack pawnStack = new Stack();
-        pawnStack.setSize(tileSize, tileSize);
+        pawnStack.setSize(80, 80);
 
         // EMPTY Texture
         Image empty = new Image(emptyTexture);
-        empty.setSize(tileSize, tileSize);
+        empty.setSize(80, 80);
         pawnStack.addActor(empty);
 
         // if the tile has a piece, draw the piece
@@ -181,7 +182,7 @@ public class GameStage {
                     // draw a white piece to the stack
                     piece = new Image(whitepiece);
                 }
-                piece.setSize(tileSize, tileSize);
+                piece.setSize(80, 80);
                 pawnStack.addActor(piece);
             }
         }
@@ -190,11 +191,11 @@ public class GameStage {
         if(tile.hasPiece() && tile.getPiece().hasProtection()) {
             // draw a protection to the stack
             Image protection = new Image(rebirthProtection);
-            protection.setSize(tileSize, tileSize);
+            protection.setSize(80, 80);
             pawnStack.addActor(protection);
         }
 
-        if(tile.hasPiece() && tile.getPiece().getColour() == SenetBoom.getTurn()){
+        if(tile.hasPiece() && tile.getPiece().getColour() == getTurn()){
 
             // drag and drop listeners
             pawnStack.addListener(new DragListener() {
@@ -204,14 +205,14 @@ public class GameStage {
                     System.out.println("Started dragging the Pawn!\n");
 
                     // Get the team color of the current tile
-                    Tile[] gameBoard = Board.getBoard();
+                    Tile[] gameBoard = getBoard();
 
                     Piece.Color teamColor = gameBoard[i].getPiece().getColour();
                     // If it's not the current team's turn, cancel the drag and return
-                    if (!(teamColor == SenetBoom.getTurn())) {
+                    if (!(teamColor == getTurn())) {
                         event.cancel();
                         System.out.println("It's not your turn!\n");
-                        SenetBoom.renderBoard();
+                        renderBoard();
                         return;
                     }
 
@@ -225,13 +226,23 @@ public class GameStage {
                         System.out.println("Move for this piece invalid");
                     }
 
-                    /*
-                    board[i].getPiece().checkMove(board[i].getPosition(), currentStickValue);
-                    */
-
                     pawnStack.toFront(); // bring to the front
 
+                    Coordinate cd = calculatePXbyTile(board[i].getPosition());
+
                     // If it's the current team's turn, continue with the drag
+                    // show the current teams arm stage
+                    if (teamColor == Piece.Color.BLACK) {
+                        // draw a black arm to the stack
+                        showArmFromBelowStage = true;
+                        float armFromBelowY = cd.getY()-(tileSize*7.25f)-10;
+                        armFromBelow.setPosition(cd.getX()-tileSize*0.5f, armFromBelowY);
+                    } else {
+                        // draw a white arm to the stack
+                        showArmFromAboveStage = true;
+                        armFromAbove.setPosition(cd.getX()-tileSize*0.5f, cd.getY()+tileSize*1.5f);
+                    }
+
                 }
 
                 @Override
@@ -240,6 +251,16 @@ public class GameStage {
                     // Code here will run during the dragging
                     // move by the difference between the current position and the last position
                     pawnStack.moveBy(x - pawnStack.getWidth() / 2, y - pawnStack.getHeight() / 2);
+
+                    // set the arm position to the current position of the pawn
+                    if (getTurn() == Piece.Color.BLACK) {
+                        // draw a black arm to the stack
+                        armFromBelow.moveBy(x - pawnStack.getWidth() / 2, y - pawnStack.getHeight() / 2);
+                    } else {
+                        // draw a white arm to the stack
+                        armFromAbove.moveBy(x - pawnStack.getWidth() / 2, y - pawnStack.getHeight() / 2);
+                    }
+
                 }
 
                 @Override
@@ -254,7 +275,7 @@ public class GameStage {
                     System.out.println("\n Drag stopped at screen position: " + screenCoords.x + ", "
                             + screenCoords.y + "\n");
 
-                    int endTile = SenetBoom.calculateTilebyPx((int) screenCoords.x, (int) screenCoords.y);
+                    int endTile = calculateTilebyPx((int) screenCoords.x, (int) screenCoords.y);
                     System.out.print("End Tile: " + endTile + "\n");
 
                     // for loop through validMoveTiles, at each tile we check for equality of currentCoord
@@ -269,7 +290,7 @@ public class GameStage {
                     if(endTile == possibleMove){
                         // Board.update with oldX, oldY, newX, newY
                         board[tile.getPosition()].movePiece(endTile);
-                        SenetBoom.legitMove = true;
+                        legitMove = true;
                         System.out.println("Move valid as in check of tile to possibleMove");
                     } else {
                         System.out.println("Move invalid as in check of tile to possibleMove");
@@ -278,8 +299,12 @@ public class GameStage {
                     // and the possibleMove is cleared
                     possibleMove = -1; // for turning off the Overlay
 
+                    // turn off the arm stage
+                    showArmFromBelowStage = false;
+                    showArmFromAboveStage = false;
+
                     // board is rendered new
-                    SenetBoom.renderBoard();
+                    renderBoard();
                 }
             }); // end of listener creation
         }

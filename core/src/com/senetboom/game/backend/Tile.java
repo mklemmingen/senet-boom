@@ -216,7 +216,9 @@ public class Tile implements Move {
     @Override
     public void movePiece(int newIndex) {
         int index = position; // starter position
+
         Tile[] board = Board.getBoard();
+
         Piece piece = board[index].getPiece();
 
         // rebirth case:
@@ -256,6 +258,7 @@ public class Tile implements Move {
                         for (int i = 13; i >= 0; i--) {
                             if (!board[i].hasPiece()) {
                                 board[i].setPiece(piece); // move to the earliest free tile
+                                board[index].removePiece(); // remove the piece from the water tile
                                 break;
                             }
                         }
@@ -263,11 +266,13 @@ public class Tile implements Move {
                         // if tile 14 is free, move the piece there and give it protection
                         board[14].setPiece(piece);
                         piece.switchProtection(); // give protection to the piece
+                        board[index].removePiece(); // remove the piece from the water tile
                     }
                     break;
                 case REBIRTH:
                     // add rebirth protection
                     piece.switchProtection();
+
                     break;
                 case SAFE:
                     // do nothing for SAFE state

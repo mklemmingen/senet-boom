@@ -31,7 +31,7 @@ public class ExtraTurnActor extends Actor {
         stack.setSize(tileSize*4, tileSize*2);
         stack.addActor(new Image(extraTurnTexture));
         this.X = tileSize*8;
-        this.Y = tileSize*4;
+        this.Y = tileSize*8;
     }
 
     @Override

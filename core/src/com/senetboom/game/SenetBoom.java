@@ -12,13 +12,12 @@ import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.senetboom.game.backend.*;
 import com.senetboom.game.frontend.actors.ExtraTurnActor;
+import com.senetboom.game.frontend.sound.MusicPlaylist;
 import com.senetboom.game.frontend.stages.GameStage;
 import com.senetboom.game.frontend.stages.MainMenu;
-import com.senetboom.game.frontend.special.RelativeResizer;
 import com.senetboom.game.frontend.text.Typewriter;
 import com.badlogic.gdx.scenes.scene2d.ui.Stack;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -72,9 +71,6 @@ public class SenetBoom extends ApplicationAdapter {
 	static Stage helpOverlayStage;
 	Texture help;
 	public static boolean displayHelp;
-
-	// handStage
-	Stage handStage;
 	Texture hand;
 	// for the pieces textures unselected
 	public static Texture blackpiece;
@@ -194,6 +190,19 @@ public class SenetBoom extends ApplicationAdapter {
 
 	public static boolean needRender;
 
+	// for the arms
+	public static Image armFromBelow;
+	public static Image armFromAbove;
+
+	// for the advanced arm stages and their respective boolean
+
+	public static Stage armFromBelowStage;
+	public static Stage armFromAboveStage;
+	public static boolean showArmFromBelowStage;
+	public static boolean showArmFromAboveStage;
+
+	public static MusicPlaylist musicPlaylist;
+
 	// enum of turn
 	private enum Turn {
 		PLAYERWHITE,
@@ -203,7 +212,7 @@ public class SenetBoom extends ApplicationAdapter {
 	@Override
 	public void create () {
 		batch = new SpriteBatch();
-		background = new Texture("textures/egypt.png");
+		background = new Texture("textures/background.png");
 
 		// from scene2dUi
 		currentStage = new Stage();
@@ -218,13 +227,19 @@ public class SenetBoom extends ApplicationAdapter {
 		typeWriterStage = new Stage();
 		hitStage = new Stage();
 		helpOverlayStage = new Stage();
-		handStage = new Stage();
 		mapStage = new Stage();
 		extraTurnStage = new Stage();
 		stickValueStage = new Stage();
 		deciderStage = new Stage();
 		hintStage = new Stage();
 		currentTurnStage = new Stage();
+
+		// for the arms
+
+		armFromBelowStage = new Stage();
+		armFromAboveStage = new Stage();
+		showArmFromBelowStage = false;
+		showArmFromAboveStage = false;
 
 		// possible Moves is a ArrayList of int values
 		possibleMoves = new ArrayList<Integer>();
@@ -240,8 +255,6 @@ public class SenetBoom extends ApplicationAdapter {
 		// loading all textures
 		blackpiece = new Texture("textures/blackpiece.png");
 		whitepiece = new Texture("textures/whitepiece.png");
-		// blackpieceSelected = new Texture("textures/blackpieceSelected.png");
-		// whitepieceSelected = new Texture("textures/whitepieceSelected.png");
 		happy = new Texture("textures/happy.png");
 		water = new Texture("textures/water.png");
 		safe = new Texture("textures/safe.png");
@@ -253,6 +266,17 @@ public class SenetBoom extends ApplicationAdapter {
 		extraTurnTexture = new Texture("textures/extraTurn.png");
 		whiteStarts = new Texture("textures/whiteStart.png");
 		blackStarts = new Texture("textures/blackStarts.png");
+
+		// arms
+
+		armFromAboveStage = new Stage();
+		armFromBelowStage = new Stage();
+
+		armFromAbove = new Image(new Texture("textures/armabovein.png"));
+		armFromBelow = new Image(new Texture("textures/armbelowin.png"));
+
+		armFromAboveStage.addActor(armFromAbove);
+		armFromBelowStage.addActor(armFromBelow);
 
 		// for the sticks
 		blackStick = new Texture("textures/blackStick.png");
@@ -281,6 +305,21 @@ public class SenetBoom extends ApplicationAdapter {
 
 		// for the empty tile texture
 		emptyTexture = new Texture("textures/empty.png");
+
+		// music Playlist
+
+		volume = 0.5f;
+
+		musicPlaylist = new MusicPlaylist();
+
+		// from youtube: https://www.youtube.com/watch?v=nBmWXmn11YE
+		musicPlaylist.addSong("music/egyptreconstruct.mp3");
+		// from youtube: https://www.youtube.com/watch?v=mECTRQ0VEyU
+		musicPlaylist.addSong("music/egyptianmusic.mp3");
+		// from youtube: https://www.youtube.com/watch?v=d7jKP_JngC8
+		musicPlaylist.addSong("music/egyptianmusic2.mp3");
+
+		musicPlaylist.play();
 
 		// for the empty variable (the tile that is currently moved by a bot)
 		emptyVariable = -1;
@@ -382,11 +421,6 @@ public class SenetBoom extends ApplicationAdapter {
 				hintStage.draw();
 			}
 
-			// for the hand texture that follow the drag position of the piece
-			// depending on if white or black (from up or from down)
-			handStage.act();
-			handStage.draw();
-
 			// for the extra turn symbol
 			extraTurnStage.act();
 			extraTurnStage.draw();
@@ -403,6 +437,17 @@ public class SenetBoom extends ApplicationAdapter {
 				// waiting for the sticks to end tumbling ( its animation )
 				Stick.update(Gdx.graphics.getDeltaTime());
 				return;
+			}
+
+			// for the arms
+			if(showArmFromBelowStage) {
+				armFromBelowStage.act();
+				armFromBelowStage.draw();
+			}
+
+			if(showArmFromAboveStage) {
+				armFromAboveStage.act();
+				armFromAboveStage.draw();
 			}
 
 			// for the display of the game having ended
@@ -553,13 +598,14 @@ public class SenetBoom extends ApplicationAdapter {
 			typeWriterStage.getViewport().update(width, height, true);
 			hitStage.getViewport().update(width, height, true);
 			helpOverlayStage.getViewport().update(width, height, true);
-			handStage.getViewport().update(width, height, true);
 			gameEndStage.getViewport().update(width, height, true);
 			extraTurnStage.getViewport().update(width, height, true);
 			stickValueStage.getViewport().update(width, height, true);
 			deciderStage.getViewport().update(width, height, true);
 			hintStage.getViewport().update(width, height, true);
 			currentTurnStage.getViewport().update(width, height, true);
+			armFromAboveStage.getViewport().update(width, height, true);
+			armFromBelowStage.getViewport().update(width, height, true);
 		}
 	}
 
@@ -621,7 +667,7 @@ public class SenetBoom extends ApplicationAdapter {
 			}
 
 			this.X = tileSize*8;
-			this.Y = tileSize*2;
+			this.Y = tileSize*8;
 		}
 
 		@Override
@@ -678,7 +724,7 @@ public class SenetBoom extends ApplicationAdapter {
 		blackStarts.dispose();
 	}
 
-	public static Coordinate calculatePXbyTile(int x, int y) {
+	public static Coordinate calculatePXbyTile(int x) {
 		// the screen is 1536 to 896. The board is 3x10 tiles and each tile is 80x80px.
 		// the board is centered on the screen
 		int screenWidth = 1536;
@@ -686,22 +732,26 @@ public class SenetBoom extends ApplicationAdapter {
 		int boardWidth = (int) (tileSize * 10);
 		int boardHeight = (int) (tileSize * 3);
 
-		// Calculate starting position of the board
+		// Calculate starting position (upper left corner) of the board
 		int boardStartX = (screenWidth - boardWidth) / 2;
 		int boardStartY = (screenHeight - boardHeight) / 2;
 
-		// Calculate tile position
-		int posX, posY;
+		int yCoord;
+		int xCoord;
 
-		if (y == 1) { // Middle row (reversed)
-			posX = (int) (boardStartX + (9 - x) * tileSize);
-		} else { // Top and bottom rows
-			posX = (int) (boardStartX + x * tileSize);
+		// Calculate the tile's position
+		if(x <= 9){
+			yCoord = boardStartY + 80;
+			xCoord = boardStartX + (x * 80);
+		} else if (x <= 19){
+			yCoord = boardStartY;
+			xCoord = boardStartX + (10*80) - ((x-9)*80);
+		} else {
+			yCoord = boardStartY - (80);
+			xCoord = boardStartY * ((x-19) * 80);
 		}
 
-		posY = (int) (boardStartY + y * tileSize);
-
-		return new Coordinate(posX, posY);
+		return new Coordinate(xCoord, yCoord);
 	}
 
 	public static int calculateTilebyPx(int x, int y) {
@@ -715,7 +765,7 @@ public class SenetBoom extends ApplicationAdapter {
 		int boardStartX = (screenWidth - boardWidth) / 2;
 		int boardStartY = (screenHeight - boardHeight) / 2;
 
-		// Adjust the y-coordinate to reflect libGDX's top-left origin
+		// Adjust the y-coordinate to reflect libGDX's bottom-left origin
 		int adjustedY = screenHeight - y;
 
 		// Calculate which tile
