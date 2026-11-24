@@ -116,3 +116,4 @@ Thumbs.db
 # Web (TeaVM) build output — the generated itch.io bundle
 /teavm/build/
 .claude/
+senet-boom-web.zip
