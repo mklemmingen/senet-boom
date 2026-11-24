@@ -112,3 +112,7 @@ Thumbs.db
 /ios/xcode/native/
 /ios/IOSLauncher.app
 /ios/IOSLauncher.app.dSYM
+
+# Web (TeaVM) build output — the generated itch.io bundle
+/teavm/build/
+.claude/

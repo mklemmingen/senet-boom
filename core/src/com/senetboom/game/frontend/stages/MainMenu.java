@@ -1,5 +1,6 @@
 package com.senetboom.game.frontend.stages;
 
+import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -17,7 +18,7 @@ import static com.senetboom.game.SenetBoom.tileSize;
 public class MainMenu {
     public static Stage createMenu() {
 
-        Stage menuStage = new Stage();
+        Stage menuStage = SenetBoom.newStage();
         Gdx.input.setInputProcessor(menuStage);
 
         Skin skin = SenetBoom.getSkin();
@@ -72,6 +73,11 @@ public class MainMenu {
         });
         root.row();
 
+        // no exit button in the browser: a web page can't close itself
+        if (Gdx.app.getType() == Application.ApplicationType.WebGL) {
+            return menuStage;
+        }
+
         TextButton exitButton = new TextButton("Exit", skin);
         root.add(exitButton).padBottom(tileSize/40).padRight(tileSize/4);
         exitButton.addListener(new ChangeListener() {
@@ -79,8 +85,6 @@ public class MainMenu {
             public void changed(ChangeEvent event, Actor actor) {
                 // for exiting the game
                 Gdx.app.exit();
-                // for ending all background activity on Windows systems specifically
-                System.exit(0);
             }
         });
         root.row();

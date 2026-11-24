@@ -1,0 +1,37 @@
+// ================================================================================================
+// WEB (TeaVM) MODULE  —  builds the itch.io-ready HTML5 version of the game.
+//
+// TeaVM transpiles the compiled Java bytecode of :core into JavaScript. Unlike the desktop build
+// there is no special Gradle plugin: we just run a normal Java program (TeaVMBuilder) that invokes
+// the TeaVM tooling. That keeps this module robust across Gradle upgrades.
+//
+//   Build it:   ./gradlew :teavm:buildJavaScript
+//   Output:     teavm/build/dist/          <-- zip this folder and upload to itch.io
+// ================================================================================================
+
+// Emit Java 11 bytecode: the TeaVM 0.10 toolchain scans this module's own classes and cannot read
+// the very newest bytecode (e.g. JDK 26 / major version 70), so we pin a version it understands.
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+sourceSets.main.java.srcDirs = ["src/"]
+
+eclipse.project.name = appName + "-teavm"
+
+// Transpile the game to a static website in teavm/build/dist.
+tasks.register('buildJavaScript', JavaExec) {
+    group = "itch.io"
+    description = "Transpile the game to HTML5/JavaScript in teavm/build/dist (upload this to itch.io)."
+    dependsOn classes
+    // The builder scans the game classes + assets, so it needs them on its classpath.
+    mainClass = "com.senetboom.game.teavm.TeaVMBuilder"
+    classpath = sourceSets.main.runtimeClasspath
+    // The TeaVM 0.10 toolchain introspects JDK platform classes and cannot parse the bytecode of
+    // the newest JDKs. Run it on JDK 17 (Gradle downloads it automatically if you don't have it),
+    // regardless of which JDK you use for everything else.
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}

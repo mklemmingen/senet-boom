@@ -1,1 +1,8 @@
-include 'desktop', 'core'
+// The foojay resolver lets Gradle automatically download a JDK when a task requests a Java
+// toolchain it can't find locally. The web (TeaVM) build uses this to run on JDK 17 even when the
+// developer only has a newer JDK installed. (See teavm/build.gradle.)
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+include 'desktop', 'core', 'teavm'
