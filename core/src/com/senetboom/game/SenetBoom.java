@@ -1,5 +1,6 @@
 package com.senetboom.game;
 
+import com.senetboom.game.frontend.image.PixelDesertTexture;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
@@ -239,7 +240,8 @@ public class SenetBoom extends ApplicationAdapter {
 		viewport = new FitViewport(WORLD_WIDTH, WORLD_HEIGHT);
 		sharedBatch = new SpriteBatch();
 		batch = sharedBatch;
-		background = new Texture("textures/background.png");
+		// new mathematical pixel-art desert at every start (fixed 8-unit pixel size)
+		background = PixelDesertTexture.create(System.currentTimeMillis());
 
 		// from scene2dUi
 		currentStage = newStage();
