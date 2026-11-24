@@ -23,6 +23,12 @@ import com.senetboom.game.frontend.stages.MainMenu;
 import com.senetboom.game.frontend.text.Typewriter;
 import com.badlogic.gdx.scenes.scene2d.ui.Stack;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.Slider;
+import com.badlogic.gdx.scenes.scene2d.ui.CheckBox;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.Window;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 
 import java.util.ArrayList;
 
@@ -67,7 +73,7 @@ public class SenetBoom extends ApplicationAdapter {
 
 	// stage options
 	public static boolean showOptions;
-	Stage OptionsStage;
+	static Stage OptionsStage;
 
 	// stage credit
 	boolean showCredits;
@@ -384,17 +390,24 @@ public class SenetBoom extends ApplicationAdapter {
 			helpOverlayStage.draw();
 		}
 
-		if (showOptions) {
-			OptionsStage.act();
-			OptionsStage.draw();
-		}
-
 		if (showCredits) {
 			CreditsStage.act();
 			CreditsStage.draw();
 		}
 
 		if(inGame){
+			renderGame();
+		}
+
+		// options window is drawn last so it sits on top of everything
+		if (showOptions) {
+			OptionsStage.act();
+			OptionsStage.draw();
+		}
+	}
+
+	private void renderGame() {
+		{
 			// all stages affiliated with the game ongoing
 
 			if(gameStarted){
@@ -561,7 +574,7 @@ public class SenetBoom extends ApplicationAdapter {
 		updateLogoStage();
 
 		renderBoard();
-		Gdx.input.setInputProcessor(currentStage);
+		Gdx.input.setInputProcessor(activeInputStage());
 	}
 
 	private static void checkForNoMoves(Turn turn) {
@@ -799,6 +812,60 @@ public class SenetBoom extends ApplicationAdapter {
 	}
 
 	public static void createOptionsStage() {
+		// small modal window: music volume, music on/off, back
+		OptionsStage.clear();
+
+		Window window = new Window("OPTIONS", skin);
+		window.setModal(true);
+		window.setMovable(false);
+		window.pad(tileSize/2, tileSize/2, tileSize/4, tileSize/2);
+
+		window.add(new Label("Music volume", skin)).left().padTop(tileSize/4);
+		window.row();
+		final Slider volumeSlider = new Slider(0f, 1f, 0.05f, false, skin);
+		volumeSlider.setValue(volume);
+		volumeSlider.addListener(new ChangeListener() {
+			@Override
+			public void changed(ChangeEvent event, Actor actor) {
+				volume = volumeSlider.getValue();
+				musicPlaylist.setVolume(volume);
+			}
+		});
+		window.add(volumeSlider).width(tileSize*5).padBottom(tileSize/4);
+		window.row();
+
+		final CheckBox musicOn = new CheckBox(" Music on", skin);
+		musicOn.setChecked(musicPlaylist.isPlaying());
+		musicOn.addListener(new ChangeListener() {
+			@Override
+			public void changed(ChangeEvent event, Actor actor) {
+				if (musicOn.isChecked()) musicPlaylist.resume(); else musicPlaylist.pause();
+			}
+		});
+		window.add(musicOn).left().padBottom(tileSize/4);
+		window.row();
+
+		TextButton back = new TextButton("BACK", skin);
+		back.addListener(new ChangeListener() {
+			@Override
+			public void changed(ChangeEvent event, Actor actor) {
+				showOptions = false;
+				Gdx.input.setInputProcessor(currentStage);
+			}
+		});
+		window.add(back).padTop(tileSize/4);
+
+		window.pack();
+		window.setPosition((WORLD_WIDTH - window.getWidth()) / 2, (WORLD_HEIGHT - window.getHeight()) / 2);
+		OptionsStage.addActor(window);
+
+		showOptions = true;
+		Gdx.input.setInputProcessor(OptionsStage);
+	}
+
+	// the stage that should receive input right now (options window wins while it is open)
+	public static Stage activeInputStage() {
+		return showOptions ? OptionsStage : currentStage;
 	}
 
 	public static Skin getSkin() {
@@ -816,7 +883,7 @@ public class SenetBoom extends ApplicationAdapter {
 		currentStage.clear();
 		currentStage = GameStage.drawBoard();
 
-		Gdx.input.setInputProcessor(currentStage);
+		Gdx.input.setInputProcessor(activeInputStage());
 	}
 
 	private static Stage drawStickValue(int currentStickValue) {
@@ -892,6 +959,12 @@ public class SenetBoom extends ApplicationAdapter {
 	}
 
 	public static void createMenu() {
+		// leaving the game: close every overlay that belongs to it
+		displayHelp = false;
+		displayHint = false;
+		showOptions = false;
+		showArmFromAboveStage = false;
+		showArmFromBelowStage = false;
 		currentStage = MainMenu.createMenu();
 		Gdx.input.setInputProcessor(currentStage);
 		inGame = false;

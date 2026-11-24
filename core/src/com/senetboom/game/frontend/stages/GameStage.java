@@ -134,7 +134,7 @@ public class GameStage {
         optionsButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                // TODO
+                createOptionsStage();
             }
         });
         exitTable.add(optionsButton).padBottom(tileSize/4);
