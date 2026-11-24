@@ -818,7 +818,7 @@ public class SenetBoom extends ApplicationAdapter {
 		Window window = new Window("OPTIONS", skin);
 		window.setModal(true);
 		window.setMovable(false);
-		window.pad(tileSize/2, tileSize/2, tileSize/4, tileSize/2);
+		window.pad(tileSize, tileSize/2, tileSize/4, tileSize/2); // top pad leaves room for the title
 
 		window.add(new Label("Music volume", skin)).left().padTop(tileSize/4);
 		window.row();
