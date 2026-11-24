@@ -17,6 +17,7 @@ public class Stick {
     private int stickValue;
     private static float maxTime = 1.5f;
     private static float elapsedTime = 0;
+    private static Texture throwSheet; // loaded once, reused for every throw
 
     // every time a new Stick is created, we need to create a new RollingSticks actor and add it to the stage
     // also save the value of the stick in the stickValue variable
@@ -75,7 +76,7 @@ public class Stick {
 
         private RollingSticks() {
             // loading the sprite sheet as a Texture
-            Texture throwSheet = new Texture(Gdx.files.internal("animations/stickThrow.png"));
+            if (throwSheet == null) throwSheet = new Texture(Gdx.files.internal("animations/stickThrow.png"));
             // splitting the Sprite Sheet into individual frames
             TextureRegion[][] tmp = TextureRegion.split(throwSheet,
                     throwSheet.getWidth() / FRAME_COLS,

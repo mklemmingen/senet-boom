@@ -138,12 +138,12 @@ public class Typewriter {
             this.displayedText = new StringBuilder();
 
             if (character == Character.WHITE) { // if the character is white, low right
-                this.x = Gdx.graphics.getWidth() - 5*SenetBoom.tileSize;
+                this.x = SenetBoom.WORLD_WIDTH - 5*SenetBoom.tileSize;
                 this.y = 2*SenetBoom.tileSize;
             }
             else { // if the character is black, top right
-                this.x = Gdx.graphics.getWidth() - 5*SenetBoom.tileSize;
-                this.y = Gdx.graphics.getHeight() - 2*SenetBoom.tileSize;
+                this.x = SenetBoom.WORLD_WIDTH - 5*SenetBoom.tileSize;
+                this.y = SenetBoom.WORLD_HEIGHT - 2*SenetBoom.tileSize;
             }
 
             this.time = 0.1f; // Time interval to add next character

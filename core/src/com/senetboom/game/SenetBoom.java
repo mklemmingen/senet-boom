@@ -13,6 +13,8 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
 import com.senetboom.game.backend.*;
 import com.senetboom.game.frontend.actors.ExtraTurnActor;
 import com.senetboom.game.frontend.sound.MusicPlaylist;
@@ -25,6 +27,20 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import java.util.ArrayList;
 
 public class SenetBoom extends ApplicationAdapter {
+
+	// virtual world size: every position/size in the game is expressed in these units and the
+	// FitViewport scales the whole world to the actual window / browser canvas (letterboxed)
+	public static final float WORLD_WIDTH = 1536;
+	public static final float WORLD_HEIGHT = 896;
+
+	// one viewport + one batch shared by every stage, so all stages scale identically
+	// and re-creating stages (renderBoard) doesn't leak a SpriteBatch each time
+	public static Viewport viewport;
+	public static SpriteBatch sharedBatch;
+
+	public static Stage newStage() {
+		return new Stage(viewport, sharedBatch);
+	}
 
 	// for the stage the bot moves a piece on
 	public static Group botMovingStage;
@@ -211,33 +227,35 @@ public class SenetBoom extends ApplicationAdapter {
 
 	@Override
 	public void create () {
-		batch = new SpriteBatch();
+		viewport = new FitViewport(WORLD_WIDTH, WORLD_HEIGHT);
+		sharedBatch = new SpriteBatch();
+		batch = sharedBatch;
 		background = new Texture("textures/background.png");
 
 		// from scene2dUi
-		currentStage = new Stage();
+		currentStage = newStage();
 		showOptions = false;
-		OptionsStage = new Stage();
+		OptionsStage = newStage();
 		showCredits = false;
-		CreditsStage = new Stage();
+		CreditsStage = newStage();
 		inGame = false;
 		gameStarted = false;
-		gameEndStage = new Stage();
-		stickStage = new Stage();
-		typeWriterStage = new Stage();
-		hitStage = new Stage();
-		helpOverlayStage = new Stage();
-		mapStage = new Stage();
-		extraTurnStage = new Stage();
-		stickValueStage = new Stage();
-		deciderStage = new Stage();
-		hintStage = new Stage();
-		currentTurnStage = new Stage();
+		gameEndStage = newStage();
+		stickStage = newStage();
+		typeWriterStage = newStage();
+		hitStage = newStage();
+		helpOverlayStage = newStage();
+		mapStage = newStage();
+		extraTurnStage = newStage();
+		stickValueStage = newStage();
+		deciderStage = newStage();
+		hintStage = newStage();
+		currentTurnStage = newStage();
 
 		// for the arms
 
-		armFromBelowStage = new Stage();
-		armFromAboveStage = new Stage();
+		armFromBelowStage = newStage();
+		armFromAboveStage = newStage();
 		showArmFromBelowStage = false;
 		showArmFromAboveStage = false;
 
@@ -269,8 +287,8 @@ public class SenetBoom extends ApplicationAdapter {
 
 		// arms
 
-		armFromAboveStage = new Stage();
-		armFromBelowStage = new Stage();
+		armFromAboveStage = newStage();
+		armFromBelowStage = newStage();
 
 		armFromAbove = new Image(new Texture("textures/armabovein.png"));
 		armFromBelow = new Image(new Texture("textures/armbelowin.png"));
@@ -329,7 +347,6 @@ public class SenetBoom extends ApplicationAdapter {
 
 		gameState = Turn.PLAYERWHITE;
 
-		resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
 		Gdx.input.setInputProcessor(currentStage);
 
@@ -340,10 +357,12 @@ public class SenetBoom extends ApplicationAdapter {
 
 	@Override
 	public void render () {
-		ScreenUtils.clear(1, 0, 0, 1);
+		ScreenUtils.clear(0, 0, 0, 1);
 
+		viewport.apply();
+		batch.setProjectionMatrix(viewport.getCamera().combined);
 		batch.begin();
-		batch.draw(background, 0, 0);
+		batch.draw(background, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 		batch.end();
 
 		if(needRender){
@@ -570,7 +589,7 @@ public class SenetBoom extends ApplicationAdapter {
 			// if noMoves is true, add a hint to the screen
 			Image noMove = new Image(noMovesTexture);
 			// add at Position middle low
-			noMove.setPosition((float) Gdx.graphics.getWidth() /2, tileSize*2);
+			noMove.setPosition(WORLD_WIDTH / 2, tileSize*2);
 			hintStage.addActor(noMove);
 
 			// add a typewriter of ANGER or CONFUSED or SAD
@@ -584,29 +603,8 @@ public class SenetBoom extends ApplicationAdapter {
 	// resize override
 	@Override
 	public void resize(int width, int height) {
-		// from scene2dUi
-		currentStage.getViewport().update(width, height, true);
-		if (showOptions) {
-			OptionsStage.getViewport().update(width, height, true);
-		}
-		if (showCredits) {
-			CreditsStage.getViewport().update(width, height, true);
-		}
-		if(inGame){
-			mapStage.getViewport().update(width, height, true);
-			stickStage.getViewport().update(width, height, true);
-			typeWriterStage.getViewport().update(width, height, true);
-			hitStage.getViewport().update(width, height, true);
-			helpOverlayStage.getViewport().update(width, height, true);
-			gameEndStage.getViewport().update(width, height, true);
-			extraTurnStage.getViewport().update(width, height, true);
-			stickValueStage.getViewport().update(width, height, true);
-			deciderStage.getViewport().update(width, height, true);
-			hintStage.getViewport().update(width, height, true);
-			currentTurnStage.getViewport().update(width, height, true);
-			armFromAboveStage.getViewport().update(width, height, true);
-			armFromBelowStage.getViewport().update(width, height, true);
-		}
+		// all stages share this viewport, so one update rescales the whole game
+		viewport.update(width, height, true);
 	}
 
 	private void updateLogoStage() {
@@ -748,7 +746,7 @@ public class SenetBoom extends ApplicationAdapter {
 			xCoord = boardStartX + (10*80) - ((x-9)*80);
 		} else {
 			yCoord = boardStartY - (80);
-			xCoord = boardStartY * ((x-19) * 80);
+			xCoord = boardStartX + ((x-20) * 80);
 		}
 
 		return new Coordinate(xCoord, yCoord);
@@ -791,8 +789,11 @@ public class SenetBoom extends ApplicationAdapter {
 	public static void createHelpStage() {
 		// load texture help
 		Image help = new Image(helpTexture);
-		help.setPosition(tileSize*13.1f, tileSize*2.7f);
-		help.setSize(tileSize*7, tileSize*9);
+		// keep the rules page's aspect ratio and keep it fully inside the world
+		float helpHeight = tileSize*9;
+		float helpWidth = helpHeight * helpTexture.getWidth() / helpTexture.getHeight();
+		help.setSize(helpWidth, helpHeight);
+		help.setPosition(WORLD_WIDTH - helpWidth - tileSize/2, (WORLD_HEIGHT - helpHeight) / 2);
 		// add it to help stage
 		helpOverlayStage.addActor(help);
 	}
@@ -820,7 +821,7 @@ public class SenetBoom extends ApplicationAdapter {
 
 	private static Stage drawStickValue(int currentStickValue) {
 
-		Stage stage = new Stage();
+		Stage stage = newStage();
 
 		// scene 2D UI stuff
 		Stack rawValue = new Stack();

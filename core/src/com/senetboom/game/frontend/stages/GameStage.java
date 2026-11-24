@@ -25,7 +25,7 @@ public class GameStage {
 
     public static Stage drawMap() {
 
-        Stage stage = new Stage();
+        Stage stage = newStage();
 
         // create a root table for the tiles
         Table root = new Table();
@@ -62,7 +62,7 @@ public class GameStage {
 
         inGame = true;
 
-        Stage stage = new Stage();
+        Stage stage = newStage();
 
         // create a root table for the pawns
         Table pawnRoot = new Table();
@@ -150,7 +150,7 @@ public class GameStage {
         });
         exitTable.add(exitButton).padBottom(tileSize/4);
 
-        exitTable.setPosition(Gdx.graphics.getWidth()-tileSize*3, tileSize*1.5f);
+        exitTable.setPosition(WORLD_WIDTH-tileSize*3, tileSize*1.5f);
         stage.addActor(exitTable);
 
         return stage;
@@ -163,7 +163,7 @@ public class GameStage {
 
         // for the stack above being the pawn on the tile
         final Stack pawnStack = new Stack();
-        pawnStack.setSize(80, 80);
+        pawnStack.setSize(tileSize, tileSize);
 
         // EMPTY Texture
         Image empty = new Image(emptyTexture);
@@ -308,7 +308,9 @@ public class GameStage {
                 }
             }); // end of listener creation
         }
-        pawnRoot.add(pawnStack);
+        // fixed cell size: otherwise the cell takes the texture's size (empty.png is 64px, pieces 80px)
+        // and the board shifts whenever pieces move between columns
+        pawnRoot.add(pawnStack).size(tileSize);
     }
 
     public static void createMapStacks(final Tile[] board, Table root, int i){
@@ -367,6 +369,6 @@ public class GameStage {
             specialState.setSize(tileSize, tileSize);
             stack.addActor(specialState);
         }
-        root.add(stack);
+        root.add(stack).size(tileSize);
     }
 }

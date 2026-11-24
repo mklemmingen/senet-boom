@@ -11,8 +11,8 @@ public class DesktopLauncher {
 		config.setWindowedMode(1536, 896);
 		config.setForegroundFPS(60);
 		config.useVsync(true);
-		config.setResizable(false);
-		config.setTitle("Sonet");
+		config.setResizable(true);
+		config.setTitle("Senet Boom");
 		config.setWindowIcon("logoSenet.png");
 		new Lwjgl3Application(new SenetBoom(), config);
 	}
