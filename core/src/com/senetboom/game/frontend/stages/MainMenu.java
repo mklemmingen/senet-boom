@@ -19,7 +19,7 @@ public class MainMenu {
     public static Stage createMenu() {
 
         Stage menuStage = SenetBoom.newStage();
-        Gdx.input.setInputProcessor(menuStage);
+        SenetBoom.setInput(menuStage);
 
         Skin skin = SenetBoom.getSkin();
 

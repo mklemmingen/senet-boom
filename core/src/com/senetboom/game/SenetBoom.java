@@ -2,6 +2,9 @@ package com.senetboom.game;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.InputMultiplexer;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
@@ -354,7 +357,7 @@ public class SenetBoom extends ApplicationAdapter {
 		gameState = Turn.PLAYERWHITE;
 
 
-		Gdx.input.setInputProcessor(currentStage);
+		setInput(currentStage);
 
 		createHelpStage(); // for the help overlay that can be activated
 
@@ -385,6 +388,9 @@ public class SenetBoom extends ApplicationAdapter {
 		currentStage.act();
 		currentStage.draw();
 
+		// hidden actors don't receive clicks, so the page only blocks input while it is shown
+		helpImage.setVisible(displayHelp);
+		helpCloseHint.setVisible(displayHelp);
 		if(displayHelp){
 			helpOverlayStage.act();
 			helpOverlayStage.draw();
@@ -574,7 +580,7 @@ public class SenetBoom extends ApplicationAdapter {
 		updateLogoStage();
 
 		renderBoard();
-		Gdx.input.setInputProcessor(activeInputStage());
+		setInput(activeInputStage());
 	}
 
 	private static void checkForNoMoves(Turn turn) {
@@ -807,9 +813,24 @@ public class SenetBoom extends ApplicationAdapter {
 		float helpWidth = helpHeight * helpTexture.getWidth() / helpTexture.getHeight();
 		help.setSize(helpWidth, helpHeight);
 		help.setPosition(WORLD_WIDTH - helpWidth - tileSize/2, (WORLD_HEIGHT - helpHeight) / 2);
+		help.addListener(new ClickListener() {
+			@Override
+			public void clicked(InputEvent event, float x, float y) {
+				displayHelp = false;
+			}
+		});
+		helpImage = help;
 		// add it to help stage
 		helpOverlayStage.addActor(help);
+
+		Label closeHint = new Label("click the page to close", skin);
+		closeHint.setPosition(help.getX() + (helpWidth - closeHint.getPrefWidth()) / 2, help.getY() + helpHeight + 4); // above the page, clear of the buttons
+		helpCloseHint = closeHint;
+		helpOverlayStage.addActor(closeHint);
 	}
+
+	private static Image helpImage;
+	private static Label helpCloseHint;
 
 	public static void createOptionsStage() {
 		// small modal window: music volume, music on/off, back
@@ -850,7 +871,7 @@ public class SenetBoom extends ApplicationAdapter {
 			@Override
 			public void changed(ChangeEvent event, Actor actor) {
 				showOptions = false;
-				Gdx.input.setInputProcessor(currentStage);
+				setInput(currentStage);
 			}
 		});
 		window.add(back).padTop(tileSize/4);
@@ -860,7 +881,13 @@ public class SenetBoom extends ApplicationAdapter {
 		OptionsStage.addActor(window);
 
 		showOptions = true;
-		Gdx.input.setInputProcessor(OptionsStage);
+		setInput(OptionsStage);
+	}
+
+	// routes input to a stage, with the help overlay in front: while the rules page is shown,
+	// a click on it closes it and is swallowed, so it can't hit buttons hidden underneath
+	public static void setInput(Stage stage) {
+		Gdx.input.setInputProcessor(new InputMultiplexer(helpOverlayStage, stage));
 	}
 
 	// the stage that should receive input right now (options window wins while it is open)
@@ -883,7 +910,7 @@ public class SenetBoom extends ApplicationAdapter {
 		currentStage.clear();
 		currentStage = GameStage.drawBoard();
 
-		Gdx.input.setInputProcessor(activeInputStage());
+		setInput(activeInputStage());
 	}
 
 	private static Stage drawStickValue(int currentStickValue) {
@@ -966,7 +993,7 @@ public class SenetBoom extends ApplicationAdapter {
 		showArmFromAboveStage = false;
 		showArmFromBelowStage = false;
 		currentStage = MainMenu.createMenu();
-		Gdx.input.setInputProcessor(currentStage);
+		setInput(currentStage);
 		inGame = false;
 	}
 
