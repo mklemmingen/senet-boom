@@ -825,6 +825,7 @@ public class SenetBoom extends ApplicationAdapter {
 
 		Label closeHint = new Label("click the page to close", skin);
 		closeHint.setPosition(help.getX() + (helpWidth - closeHint.getPrefWidth()) / 2, help.getY() + helpHeight + 4); // above the page, clear of the buttons
+		closeHint.setColor(0.1f, 0.05f, 0f, 1f); // dark, readable on the light sky
 		helpCloseHint = closeHint;
 		helpOverlayStage.addActor(closeHint);
 	}
