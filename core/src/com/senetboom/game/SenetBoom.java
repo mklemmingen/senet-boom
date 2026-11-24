@@ -126,6 +126,12 @@ public class SenetBoom extends ApplicationAdapter {
 	// for knowing when to skip the Turn
 	public static boolean skipTurn;
 
+	// true when the player whose turn it is cannot move with the current throw (END TURN is shown only then)
+	public static boolean noMovesAvailable;
+
+	// true once one side has no pieces left; stops the turn loop until the player goes back to the menu
+	public static boolean gameOver;
+
 	public static Texture logo;
 
 	// for the textbutton skin
@@ -441,6 +447,11 @@ public class SenetBoom extends ApplicationAdapter {
 				// add the stickValueStage
 				stickValueStage = SenetBoom.drawStickValue(currentStickValue);
 				gameStarted = false;
+				gameOver = false;
+				possibleMoves = new ArrayList<Integer>();
+				checkForNoMoves(gameState);
+				renderBoard();
+				setInput(activeInputStage());
 			}
 
 			// stick animation
@@ -528,7 +539,9 @@ public class SenetBoom extends ApplicationAdapter {
 			// if not legitMove, waits for a legitMove switch around
 			// if legitMove, moves the piece in its respective dragStop Listener
 			// check if the game is over
-			checkForGameEnd();
+			if (checkForGameEnd()) {
+				return; // the winner window is up; no more turns
+			}
 			// switch turn after completing the move
 			switchTurn();
 		}
@@ -606,6 +619,7 @@ public class SenetBoom extends ApplicationAdapter {
 				}
 			}
 		}
+		noMovesAvailable = noMoves;
 		if(noMoves){
 			// if noMoves is true, add a hint to the screen
 			Image noMove = new Image(noMovesTexture);
@@ -893,9 +907,10 @@ public class SenetBoom extends ApplicationAdapter {
 		Gdx.input.setInputProcessor(new InputMultiplexer(helpOverlayStage, stage));
 	}
 
-	// the stage that should receive input right now (options window wins while it is open)
+	// the stage that should receive input right now (options window first, then the winner window)
 	public static Stage activeInputStage() {
-		return showOptions ? OptionsStage : currentStage;
+		if (showOptions) return OptionsStage;
+		return gameOver ? gameEndStage : currentStage;
 	}
 
 	public static Skin getSkin() {
@@ -995,12 +1010,15 @@ public class SenetBoom extends ApplicationAdapter {
 		showOptions = false;
 		showArmFromAboveStage = false;
 		showArmFromBelowStage = false;
+		gameOver = false;
+		noMovesAvailable = false;
+		if (gameEndStage != null) gameEndStage.clear();
 		currentStage = MainMenu.createMenu();
 		setInput(currentStage);
 		inGame = false;
 	}
 
-	private void checkForGameEnd() {
+	private boolean checkForGameEnd() {
 		// goes over the gameBoard and counts, if someone has no pieces at all left
 		// if so, the game ends and the winner is displayed
 		// if not, the game continues
@@ -1017,20 +1035,53 @@ public class SenetBoom extends ApplicationAdapter {
 				}
 			}
 		}
+		// a side wins by bearing off all of its pieces through the House of Happiness
 		if(whitePieces == 0){
 			createGameEnd(Piece.Color.WHITE);
+			return true;
 		}
 		if(blackPieces == 0){
 			createGameEnd(Piece.Color.BLACK);
+			return true;
 		}
+		return false;
 	}
 
-	private void createGameEnd(Piece.Color color) {
-		/*
-		creats a stage that displays the winner
-		 */
+	private void createGameEnd(Piece.Color winner) {
+		// shows the winner in a modal window with a button back to the home screen
+		gameOver = true;
+		noMovesAvailable = false;
+		displayHint = false;
+		showArmFromAboveStage = false;
+		showArmFromBelowStage = false;
+		hintStage.clear();
+		gameEndStage.clear();
 
-		// TODO
+		Window window = new Window("GAME OVER", skin);
+		window.setModal(true);
+		window.setMovable(false);
+		window.pad(tileSize, tileSize/2, tileSize/4, tileSize/2); // top pad leaves room for the title
+
+		String name = winner == Piece.Color.WHITE ? "WHITE" : "BLACK";
+		window.add(new Label(name + " WINS!", skin)).padTop(tileSize/4).padBottom(tileSize/8);
+		window.row();
+		window.add(new Label("All " + name.toLowerCase() + " pieces reached the House of Happiness.", skin)).padBottom(tileSize/4);
+		window.row();
+
+		TextButton home = new TextButton("BACK TO HOME SCREEN", skin);
+		home.addListener(new ChangeListener() {
+			@Override
+			public void changed(ChangeEvent event, Actor actor) {
+				createMenu();
+			}
+		});
+		window.add(home).padBottom(tileSize/8);
+
+		window.pack();
+		window.setPosition((WORLD_WIDTH - window.getWidth()) / 2, (WORLD_HEIGHT - window.getHeight()) / 2);
+		gameEndStage.addActor(window);
+		renderBoard();
+		setInput(gameEndStage);
 	}
 
 	public static Piece.Color getTurn(){

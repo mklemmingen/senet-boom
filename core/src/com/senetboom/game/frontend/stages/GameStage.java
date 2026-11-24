@@ -118,16 +118,19 @@ public class GameStage {
         exitTable.add(hintButton).padBottom(tileSize/4).padLeft(tileSize/8);
         exitTable.row();
 
-        // add a skipTurn button
-        TextButton skipTurnButton = new TextButton("END TURN", skin);
-        skipTurnButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                skipTurn = true;
-            }
-        });
-        exitTable.add(skipTurnButton).padBottom(tileSize/4);
-        exitTable.row();
+        // END TURN only appears when the current player cannot move with this throw,
+        // so a player who can move has to make a move
+        if (noMovesAvailable && !gameOver) {
+            TextButton skipTurnButton = new TextButton("END TURN", skin);
+            skipTurnButton.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    skipTurn = true;
+                }
+            });
+            exitTable.add(skipTurnButton).padBottom(tileSize/4);
+            exitTable.row();
+        }
 
         // add the Options button
         TextButton optionsButton = new TextButton("OPTIONS", skin);
